@@ -43,7 +43,9 @@ var Reedr = (function() {
           }
         }
         var blurred = getSmoothing(getSmoothing(bw));
-        displayImageBW(blurred);
+        var labeled = labelWords(blurred);
+        displayImageBW(labeled);
+
         renderDividers(bw);
       });
     });
@@ -122,10 +124,9 @@ var Reedr = (function() {
     for (var j = -4; j <= 4; j++) {
       dists.push([]);
       for (var k = -4; k <= 4; k++) {
-        dists[j + 4].push(gaussDist(j, k, 2.0))
+        dists[j + 4].push(gaussDist(j, k, 1.5))
       }
     }
-    console.log(dists)
     for (var i = 0; i < bw.length; i++) {
       if (bw[i] === 0) {
         var row = Math.floor(i / dims[0]);
@@ -137,14 +138,80 @@ var Reedr = (function() {
         }
       }
     }
+    for (var i = 0; i < gauss.length; i++) {
+      if (gauss[i] > 0.4) {
+        gauss[i] = 0;
+      } else {
+        gauss[i] = 1;
+      }
+    }
     return gauss;
   }
 
   function labelWords(blurred) {
+    console.log(blurred);
+    var threshold = 0.5;
     var labels = [];
-    for (var i = 0; i < bw.length; i++) {
+    for (var i = 0; i < blurred.length; i++) {
       labels.push(0);
     }
+    var val = 1;
+    var counter = 0;
+    for (var i = 0; i < blurred.length; i++) {
+      if (labels[i] != 0 || blurred[i] === 1) {
+        continue;
+      } else {
+        var q = [i];
+        var ind = 0;
+        while (ind < q.length) {
+          var cur = q[ind];
+          var row = Math.floor(cur / dims[0])
+          var col = cur % dims[0];
+          if (row + 1 < dims[0]) {
+            var el = (row + 1) * dims[0] + col;
+            if (blurred[el] < threshold && labels[el] === 0) {
+              labels[el] = val;
+              q.push(el);
+            }
+          }
+          if (row - 1 >= 0) {
+            var el = (row - 1) * dims[0] + col;
+            if (blurred[el] < threshold && labels[el] === 0) {
+              labels[el] = val;
+              q.push(el);
+            }
+          }
+          if (col - 1 >= 0) {
+            var el = row * dims[0] + col - 1;
+            if (blurred[el] < threshold && labels[el] === 0) {
+              labels[el] = val;
+              q.push(el);
+            }
+          }
+          if (col + 1 < dims[1]) {
+            var el = row * dims[0] + col + 1;
+            if (blurred[el] < threshold && labels[el] === 0) {
+              labels[el] = val;
+              q.push(el);
+            }
+          }
+          ind++;
+        }
+        val++;
+        if (q.length > 30) {
+          counter++;
+        }
+      }
+    }
+    for (var i = 0; i < labels.length; i++) {
+      if (labels[i] > 1000) {
+        labels[i] = 0;
+      }
+    }
+    console.log(val)
+    console.log(counter)
+    console.log(labels);
+    return labels
   }
 
   //updates the pixels array with the selected image's data. From:
