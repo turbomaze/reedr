@@ -25,28 +25,67 @@ var Reedr = (function() {
   /******************
   * work functions */
   function initReedr() {
+    //canvas stuff
     canvas = $s('#canvas');
     canvas.style.width = DISP_WID+'px';
     canvas.style.height = DISP_WID+'px';
     ctx = canvas.getContext('2d');
 
+    //misc variable init
     dims = [0, 0], pixels = [];
+
+    //do work whenever the selected picture changes
     $s('#image-sel').addEventListener('change', function(e) {
       updatePixelData(e, function() {
-        var bw = colToBW(pixels, dims[0]);
-        var nums = [0, 0]
-        for (var i = 0; i < bw.length; i++) {
-          if (bw[i] === 0) {
-            nums[0]++;
-          } else {
-            nums[1]++
-          }
-        }
-        var blurred = getSmoothing(getSmoothing(bw));
-        displayImageBW(blurred);
-        renderDividers(bw);
+        var bw = colToBW(pixels, dims[0]); //first, remove the color
+        var blurred = getSmoothing(getSmoothing(bw)); //then, blur it
+        bw = grayToBW(blurred, dims[0], 0.5); //finally, go back to bw
+        displayImageBW(bw); //display it
+        renderDividers(bw); //get the dividing lines
       });
     });
+  }
+
+  //updates the pixels array with the selected image's data. From:
+  //www.syntaxxx.com/accessing-user-device-photos-with-the-html5-camera-api/
+  function updatePixelData(e, callback) {
+    //bring selected photo in
+    var fileInput = e.target.files;
+    if (fileInput.length > 0) {
+      //get the file
+      var windowURL = window.URL || window.webkitURL;
+      var picURL = windowURL.createObjectURL(fileInput[0]);
+      getPixelsFromImage(picURL, 2*DISP_WID, function(data, width, time) {
+        //report out
+        console.log('Finished loading pixels in '+time+'ms.');
+
+        //fix funky orientations
+        if (width > data.length/(4*width)) {
+          //rotate it
+          pixels = [];
+          for (var x = 0; x < width; x++) {
+            for (var y = data.length/(4*width)-1; y >= 0; y--) {
+              var idx = 4*(y*width+x); //idx in data
+              pixels.push(data[idx]);
+              pixels.push(data[idx+1]);
+              pixels.push(data[idx+2]);
+              pixels.push(data[idx+3]);
+            }
+          }
+          //update the dimension and pixels working vars
+          dims = [data.length/(4*width), width];
+        } else {
+          //keep its orientation
+          pixels = data;
+          dims = [width, data.length/(4*width)];
+        }
+
+
+        //get rid of the blob and finish
+        windowURL.revokeObjectURL(picURL);
+        callback();
+      });
+    }
   }
 
   //displays the currently loaded image in BW and returns the BW data
@@ -107,11 +146,6 @@ var Reedr = (function() {
     console.log('Finished dividing lines in '+(+new Date()-start)+'ms.');
   }
 
-  function gaussDist(x, y, sigma) {
-    sigma = sigma || 0.84089642;
-    return (1/(2*Math.PI*sigma*sigma))*Math.exp(-(x*x+y*y)/(2*sigma*sigma));
-  }
-
   function getSmoothing(bw) {
     var gauss = [];
     for (var i = 0; i < bw.length; i++) {
@@ -125,7 +159,7 @@ var Reedr = (function() {
         dists[j + 4].push(gaussDist(j, k, 2.0))
       }
     }
-    console.log(dists)
+
     for (var i = 0; i < bw.length; i++) {
       if (bw[i] === 0) {
         var row = Math.floor(i / dims[0]);
@@ -147,32 +181,14 @@ var Reedr = (function() {
     }
   }
 
-  //updates the pixels array with the selected image's data. From:
-  //www.syntaxxx.com/accessing-user-device-photos-with-the-html5-camera-api/
-  function updatePixelData(e, callback) {
-    //bring selected photo in
-    var fileInput = e.target.files;
-    if (fileInput.length > 0) {
-      //get the file
-      var windowURL = window.URL || window.webkitURL;
-      var picURL = windowURL.createObjectURL(fileInput[0]);
-      getPixelsFromImage(picURL, 2*DISP_WID, function(data, width, time) {
-        //report out
-        console.log('Finished loading pixels in '+time+'ms.');
-
-        //update the dimension and pixels working vars
-        dims = [width, data.length/(4*width)];
-        pixels = data;
-
-        //get rid of the blob and finish
-        windowURL.revokeObjectURL(picURL);
-        callback();
-      });
-    }
-  }
-
   /********************
    * helper functions */
+  function grayToBW(data, width, thresh) {
+    return data.map(function(intensity) {
+      return intensity > thresh ? 1 : 0;
+    });
+  }
+
   function colToBW(data, width, thresh) {
     thresh = thresh || 0.75;
 
@@ -189,16 +205,7 @@ var Reedr = (function() {
     }
     avgGray /= dims[0]*dims[1];
 
-    //turn gray into black and white
-    var bw = [];
-    for (var y = 0; y < ht; y++) { //for all intended rows
-      for (var x = 0; x < width; x++) { //and for each intended column
-        var idx = dims[0]*y + x; //idx of this pixel in the pixels array
-        if (gray[idx] > thresh*avgGray) bw.push(1);
-        else bw.push(0);
-      }
-    }
-    return bw;
+    return grayToBW(gray, width, thresh*avgGray);
   }
 
   //given a url, provides a callback with the pixel data of the corresp image
@@ -271,6 +278,11 @@ var Reedr = (function() {
     };
 
     img.src = location; //load the image
+  }
+
+  function gaussDist(x, y, sigma) {
+    sigma = sigma || 0.84089642;
+    return (1/(2*Math.PI*sigma*sigma))*Math.exp(-(x*x+y*y)/(2*sigma*sigma));
   }
 
   function $s(id) { //for convenience
