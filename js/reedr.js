@@ -12,7 +12,7 @@ var Reedr = (function() {
 
   /**********
    * config */
-  var DISP_WID = 600;
+  var DISP_WID = 360;
 
   /*************
    * constants */
@@ -32,32 +32,74 @@ var Reedr = (function() {
 
     dims = [0, 0], pixels = [];
     $s('#image-sel').addEventListener('change', function(e) {
-      updatePixelData(e, displayImage);
+      updatePixelData(e, function() {
+        var bw = colToBW(pixels, dims[0]);
+        displayImageBW(bw);
+        renderDividers(bw);
+      });
     });
   }
 
-  //displays the currently loaded image
-  function displayImage() {
+  //displays the currently loaded image in BW and returns the BW data
+  function displayImageBW(bw) {
+    //fix the dimensions
     canvas.style.height = (DISP_WID*(dims[1]/dims[0]))+'px';
     canvas.width = dims[0];
     canvas.height = dims[1];
+
+    //display the bw image
     var currImageData = ctx.getImageData(0, 0, dims[0], dims[1]);
-		for (var y = 0; y < dims[1]; y++) { //for all intended rows
-			for (var x = 0; x < dims[0]; x++) { //and for each intended column
-				var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
-				currImageData.data[idx] = pixels[idx+1];
-				currImageData.data[idx+1] = pixels[idx];
-				for (var c = 2; c < 4; c++) { //and for all three colors, lol c++
-					currImageData.data[idx+c] = pixels[idx+c];
-				}
-			}
-		}
-		ctx.putImageData(currImageData, 0, 0);
+    for (var y = 0; y < dims[1]; y++) { //for all intended rows
+      for (var x = 0; x < dims[0]; x++) { //and for each intended column
+        var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
+        for (var c = 0; c < 3; c++) { //and for all three colors, lol c++
+          currImageData.data[idx+c] = 255*bw[idx/4];
+        }
+        currImageData.data[idx+3] = 255;
+      }
+    }
+    ctx.putImageData(currImageData, 0, 0);
+
+    return bw;
   }
 
-  //from http://www.syntaxxx.com/accessing-user-device-photos-
-  //     with-the-html5-camera-api/
-  //updates the pixels array with the selected image's data
+  //renders lines between each of the lines of text
+  function renderDividers(bw) {
+    var start = +new Date();
+
+    //loop over the horizontal rows for clear lines across
+    var n = 2;
+    var offset = dims[0]/n;
+    for (var ai = 0; ai < n; ai++) {
+      var blocks = [[]];
+      for (var y = 0; y < dims[1]; y++) {
+        var score = 0;
+        for (var x = ai*offset; x < (ai+1)*offset; x++) {
+          score += bw[y*dims[0]+x];
+        }
+        if (score > 0.9*offset) {
+          blocks[blocks.length-1].push([y, score]);
+        } else if (blocks[blocks.length-1].length !== 0) {
+          blocks.push([]);
+        }
+      }
+
+      blocks.map(function(streak) {
+        return streak.reduce(function(best, pair) {
+          if (pair[1] >= best[1]) return pair;
+          else return best;
+        }, [-1, -Infinity]);
+      }).forEach(function(peak) {
+        ctx.fillStyle = 'red';
+        ctx.fillRect(ai*offset, peak[0]-0.5, (ai+1)*offset, 2);
+      });
+    }
+
+    console.log('Finished dividing lines in '+(+new Date()-start)+'ms.');
+  }
+
+  //updates the pixels array with the selected image's data. From:
+  //www.syntaxxx.com/accessing-user-device-photos-with-the-html5-camera-api/
   function updatePixelData(e, callback) {
     //bring selected photo in
     var fileInput = e.target.files;
@@ -65,11 +107,16 @@ var Reedr = (function() {
       //get the file
       var windowURL = window.URL || window.webkitURL;
       var picURL = windowURL.createObjectURL(fileInput[0]);
-      getPixelsFromImage(picURL, function(data, width) {
+      getPixelsFromImage(picURL, 2*DISP_WID, function(data, width, time) {
+        //report out
+        console.log('Finished loading pixels in '+time+'ms.');
+
+        //update the dimension and pixels working vars
         dims = [width, data.length/(4*width)];
         pixels = data;
-        windowURL.revokeObjectURL(picURL);
 
+        //get rid of the blob and finish
+        windowURL.revokeObjectURL(picURL);
         callback();
       });
     }
@@ -77,31 +124,104 @@ var Reedr = (function() {
 
   /********************
    * helper functions */
+  function colToBW(data, width, thresh) {
+    thresh = thresh || 0.75;
+
+    //convert to grayscale
+    var gray = [], avgGray = 0;
+    var ht = data.length/(4*width);
+    for (var y = 0; y < ht; y++) { //for all intended rows
+      for (var x = 0; x < width; x++) { //and for each intended column
+        var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
+        var val = 0.21*data[idx]+0.72*data[idx+1]+0.07*data[idx+2];
+        gray.push(val);
+        avgGray += val;
+      }
+    }
+    avgGray /= dims[0]*dims[1];
+
+    //turn gray into black and white
+    var bw = [];
+    for (var y = 0; y < ht; y++) { //for all intended rows
+      for (var x = 0; x < width; x++) { //and for each intended column
+        var idx = dims[0]*y + x; //idx of this pixel in the pixels array
+        if (gray[idx] > thresh*avgGray) bw.push(1);
+        else bw.push(0);
+      }
+    }
+    return bw;
+  }
+
   //given a url, provides a callback with the pixel data of the corresp image
-  function getPixelsFromImage(location, callback) { //returns array of px colors
-   	var timeStartedGettingPixels = new Date().getTime();
-   	var img = new Image(); //make a new image
-   	img.onload = function() { //when it is finished loading
-   		var canvas = document.createElement('canvas'); //make a canvas element
-   		canvas.width = img.width; //with this width
-   		canvas.height = img.height; //and this height (the same as the img)
-   		canvas.style.display = 'none'; //hide it from the user
-   		document.body.appendChild(canvas); //then add it to the document's body
-   		var ctx = canvas.getContext('2d'); //now get the context
-   		ctx.drawImage(img, 0, 0, img.width, img.height); //so that you can draw it
-   		var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-   		document.body.removeChild(canvas); //all done, so get rid of it
+  //  resized to the given width
+  function getPixelsFromImage(location, W2, callback) {
+    var timeStartedGettingPixels = new Date().getTime();
+    var img = new Image(); //make a new image
+    img.onload = function() { //when it is finished loading
+      var canvas = document.createElement('canvas'); //make a canvas element
+      canvas.width = img.width; //with this width
+      canvas.height = img.height; //and this height (the same as the img)
+      canvas.style.display = 'none'; //hide it from the user
+      document.body.appendChild(canvas); //then add it to the document's body
+      var ctx = canvas.getContext('2d'); //now get the context
+      ctx.drawImage(img, 0, 0, img.width, img.height); //so that you can draw it
+      var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
-   		//...all so you can send the pixels, width, and the time taken to get
-       //them back through the callback
-   		var ret = [];
-   		for (var ai = 0; ai < imageData.data.length; ai++) {
-         ret.push(imageData.data[ai]); //annoying copy so the array can be edited
-   		}
-       callback(ret, img.width, new Date().getTime() - timeStartedGettingPixels);
-   	};
+      //code for the resizing
+      var H2 = W2*(img.height/img.width);
+      var data2 = ctx.getImageData(0, 0, W2, H2).data;
+      var ratio = canvas.width/W2;
+      var ratioHalf = Math.ceil(ratio);
+      document.body.removeChild(canvas); //all done, so get rid of it
 
-   	img.src = location; //load the image
+      //hermite, thanks to ViliusL from
+      //  https://github.com/viliusle/Hermite-resize/blob/master/hermite.js
+      for (var j = 0; j < H2; j++) {
+        for (var i = 0; i < W2; i++) {
+          var x2 = (i + j*W2) * 4;
+          var weight = 0;
+          var weights = 0;
+          var weights_alpha = 0;
+          var gx_r = 0, gx_g = 0, gx_b = 0, gx_a = 0;
+          var center_y = (j + 0.5) * ratio;
+          for (var yy = Math.floor(j*ratio); yy < (j+1)*ratio; yy++) {
+            var dy = Math.abs(center_y - (yy + 0.5)) / ratioHalf;
+            var center_x = (i + 0.5) * ratio;
+            var w0 = dy*dy //pre-calc part of w
+            for (var xx = Math.floor(i*ratio); xx < (i+1)*ratio; xx++) {
+              var dx = Math.abs(center_x - (xx + 0.5)) / ratioHalf;
+              var w = Math.sqrt(w0 + dx*dx);
+              if (w >= -1 && w <= 1) {
+                //hermite filter
+                weight = 2 * w*w*w - 3*w*w + 1;
+                if (weight > 0) {
+                  dx = 4*(xx + yy*img.width);
+                  //alpha
+                  gx_a += weight * data[dx + 3];
+                  weights_alpha += weight;
+                  //colors
+                  if(data[dx+3] < 255) weight = weight*data[dx+3] / 250;
+                  gx_r += weight * data[dx];
+                  gx_g += weight * data[dx + 1];
+                  gx_b += weight * data[dx + 2];
+                  weights += weight;
+                }
+              }
+            }
+          }
+          data2[x2] = gx_r/weights;
+          data2[x2+1] = gx_g/weights;
+          data2[x2+2] = gx_b/weights;
+          data2[x2+3] = gx_a/weights_alpha;
+        }
+      }
+
+      //...all so you can send the pixels, width, and the time taken to get
+      //them back through the callback
+      callback(data2, W2, new Date().getTime() - timeStartedGettingPixels);
+    };
+
+    img.src = location; //load the image
   }
 
   function $s(id) { //for convenience
