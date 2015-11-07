@@ -39,9 +39,9 @@ var Reedr = (function() {
       updatePixelData(e, function() {
         var bw = colToBW(pixels, dims[0]); //first, remove the color
         var blurred = getSmoothing(getSmoothing(bw)); //then, blur it
+        var labeled = labelWords(blurred);
         bw = grayToBW(blurred, dims[0], 0.5); //finally, go back to bw
-        displayImageBW(bw); //display it
-        renderDividers(bw); //get the dividing lines
+        displayImageBW(labeled); //display it
       });
     });
   }
@@ -110,41 +110,6 @@ var Reedr = (function() {
     return bw;
   }
 
-  //renders lines between each of the lines of text
-  function renderDividers(bw) {
-    var start = +new Date();
-
-    //loop over the horizontal rows for clear lines across
-    var n = 2;
-    var offset = dims[0]/n;
-    for (var ai = 0; ai < n; ai++) {
-      var blocks = [[]];
-      for (var y = 0; y < dims[1]; y++) {
-        var score = 0;
-        for (var x = ai*offset; x < (ai+1)*offset; x++) {
-          score += bw[y*dims[0]+x];
-        }
-        if (score > 0.9*offset) {
-          blocks[blocks.length-1].push([y, score]);
-        } else if (blocks[blocks.length-1].length !== 0) {
-          blocks.push([]);
-        }
-      }
-
-      blocks.map(function(streak) {
-        return streak.reduce(function(best, pair) {
-          if (pair[1] >= best[1]) return pair;
-          else return best;
-        }, [-1, -Infinity]);
-      }).forEach(function(peak) {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(ai*offset, peak[0]-0.5, (ai+1)*offset, 2);
-      });
-    }
-
-    console.log('Finished dividing lines in '+(+new Date()-start)+'ms.');
-  }
-
   function getSmoothing(bw) {
     var gauss = [];
     for (var i = 0; i < bw.length; i++) {
@@ -199,7 +164,7 @@ var Reedr = (function() {
           var cur = q[ind];
           var row = Math.floor(cur / dims[0])
           var col = cur % dims[0];
-          if (row + 1 < dims[0]) {
+          if (row + 1 < dims[1]) {
             var el = (row + 1) * dims[0] + col;
             if (blurred[el] < threshold && labels[el] === 0) {
               labels[el] = val;
@@ -220,7 +185,7 @@ var Reedr = (function() {
               q.push(el);
             }
           }
-          if (col + 1 < dims[1]) {
+          if (col + 1 < dims[0]) {
             var el = row * dims[0] + col + 1;
             if (blurred[el] < threshold && labels[el] === 0) {
               labels[el] = val;
@@ -230,19 +195,8 @@ var Reedr = (function() {
           ind++;
         }
         val++;
-        if (q.length > 30) {
-          counter++;
-        }
       }
     }
-    for (var i = 0; i < labels.length; i++) {
-      if (labels[i] > 1000) {
-        labels[i] = 0;
-      }
-    }
-    console.log(val)
-    console.log(counter)
-    console.log(labels);
     return labels
   }
 
