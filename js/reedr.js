@@ -2,7 +2,7 @@
 | Real Life Speed  |
 |  Reader - Reedr  |
 | @author Anthony  |
-| @version 0.1     |
+| @version 0.2     |
 | @date 2015/11/07 |
 | @edit 2015/11/07 |
 \******************/
@@ -146,7 +146,6 @@ var Reedr = (function() {
   }
 
   function labelWords(blurred) {
-    console.log(blurred);
     var threshold = 0.5;
     var labels = [];
     for (var i = 0; i < blurred.length; i++) {
