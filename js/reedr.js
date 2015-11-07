@@ -34,7 +34,16 @@ var Reedr = (function() {
     $s('#image-sel').addEventListener('change', function(e) {
       updatePixelData(e, function() {
         var bw = colToBW(pixels, dims[0]);
-        displayImageBW(bw);
+        var nums = [0, 0]
+        for (var i = 0; i < bw.length; i++) {
+          if (bw[i] === 0) {
+            nums[0]++;
+          } else {
+            nums[1]++
+          }
+        }
+        var blurred = getSmoothing(getSmoothing(bw));
+        displayImageBW(blurred);
         renderDividers(bw);
       });
     });
@@ -53,7 +62,7 @@ var Reedr = (function() {
       for (var x = 0; x < dims[0]; x++) { //and for each intended column
         var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
         for (var c = 0; c < 3; c++) { //and for all three colors, lol c++
-          currImageData.data[idx+c] = 255*bw[idx/4];
+          currImageData.data[idx+c] = Math.floor(255*bw[idx/4]);
         }
         currImageData.data[idx+3] = 255;
       }
@@ -96,6 +105,46 @@ var Reedr = (function() {
     }
 
     console.log('Finished dividing lines in '+(+new Date()-start)+'ms.');
+  }
+
+  function gaussDist(x, y, sigma) {
+    sigma = sigma || 0.84089642;
+    return (1/(2*Math.PI*sigma*sigma))*Math.exp(-(x*x+y*y)/(2*sigma*sigma));
+  }
+
+  function getSmoothing(bw) {
+    var gauss = [];
+    for (var i = 0; i < bw.length; i++) {
+      gauss.push(0);
+    }
+
+    var dists = [];
+    for (var j = -4; j <= 4; j++) {
+      dists.push([]);
+      for (var k = -4; k <= 4; k++) {
+        dists[j + 4].push(gaussDist(j, k, 2.0))
+      }
+    }
+    console.log(dists)
+    for (var i = 0; i < bw.length; i++) {
+      if (bw[i] === 0) {
+        var row = Math.floor(i / dims[0]);
+        var col = i % dims[0];
+        for (var j = Math.max(row - 4, 0); j <= Math.min(row + 4, dims[1] - 1); j++) {
+          for (var k = Math.max(col - 4, 0); k <= Math.min(col + 4, dims[0] - 1); k++) {
+            gauss[j * dims[0] + k] += 4 * dists[j + 4 - row][k + 4 - col];
+          }
+        }
+      }
+    }
+    return gauss;
+  }
+
+  function labelWords(blurred) {
+    var labels = [];
+    for (var i = 0; i < bw.length; i++) {
+      labels.push(0);
+    }
   }
 
   //updates the pixels array with the selected image's data. From:
