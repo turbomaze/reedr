@@ -38,21 +38,78 @@ var Reedr = (function() {
 
   //displays the currently loaded image
   function displayImage() {
+    //display the og image
     canvas.style.height = (DISP_WID*(dims[1]/dims[0]))+'px';
     canvas.width = dims[0];
     canvas.height = dims[1];
+
+    //get the pixels in grayscale
+    var gray = [];
+    var avgGray = 0;
+    for (var y = 0; y < dims[1]; y++) { //for all intended rows
+			for (var x = 0; x < dims[0]; x++) { //and for each intended column
+				var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
+        var val = 0.21*pixels[idx]+0.72*pixels[idx+1]+0.07*pixels[idx+2];
+        gray.push(val);
+        avgGray += val;
+			}
+		}
+    avgGray /= dims[0]*dims[1];
+
+    //turn gray into black and white
+    var bw = [];
+    for (var y = 0; y < dims[1]; y++) { //for all intended rows
+			for (var x = 0; x < dims[0]; x++) { //and for each intended column
+				var idx = dims[0]*y + x; //idx of this pixel in the pixels array
+        if (gray[idx] > 0.75*avgGray) bw.push(1);
+        else bw.push(0);
+			}
+		}
+
     var currImageData = ctx.getImageData(0, 0, dims[0], dims[1]);
 		for (var y = 0; y < dims[1]; y++) { //for all intended rows
 			for (var x = 0; x < dims[0]; x++) { //and for each intended column
 				var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
-				currImageData.data[idx] = pixels[idx+1];
-				currImageData.data[idx+1] = pixels[idx];
-				for (var c = 2; c < 4; c++) { //and for all three colors, lol c++
-					currImageData.data[idx+c] = pixels[idx+c];
+				for (var c = 0; c < 3; c++) { //and for all three colors, lol c++
+					currImageData.data[idx+c] = 255*bw[idx/4];
 				}
+				currImageData.data[idx+3] = 255;
 			}
 		}
 		ctx.putImageData(currImageData, 0, 0);
+
+    renderDividers(bw);
+  }
+
+  //renders lines between each of the lines of text
+  function renderDividers(bw) {
+    //loop over the horizontal rows for clear lines across
+    var n = 1;
+    var offset = dims[0]/n;
+    for (var ai = 0; ai < n; ai++) {
+      var blocks = [[]];
+      for (var y = 0; y < dims[1]; y++) {
+        var score = 0;
+        for (var x = ai*offset; x < (ai+1)*offset; x++) {
+          score += bw[y*dims[0]+x];
+        }
+        if (score > 0.9*offset) {
+          blocks[blocks.length-1].push([y, score]);
+        } else if (blocks[blocks.length-1].length !== 0) {
+          blocks.push([]);
+        }
+      }
+
+      blocks.map(function(streak) {
+        return streak.reduce(function(best, pair) {
+          if (pair[1] >= best[1]) return pair;
+          else return best;
+        }, [-1, -Infinity]);
+      }).forEach(function(peak) {
+        ctx.fillStyle = 'red';
+        ctx.fillRect(ai*offset, peak[0]-0.5, (ai+1)*offset, 2);
+      });
+    }
   }
 
   //from http://www.syntaxxx.com/accessing-user-device-photos-
