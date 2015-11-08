@@ -1,12 +1,15 @@
+html {
+	min-height:100%;
+	background-image: url('../shelf.jpg');
+	background-size: cover;
+	background-position:center;
+	background-repeat: no-repeat;
+}
+
 body, html {
 	font-family: raleway;
-	background-image: url('../shelf.jpg');
-	background-attachment: fixed;
-	background-position: center;
-	background-size:cover;
-	background-repeat: no-repeat;
 	text-align:center;
-	color:white;
+	color: white;
 }
 
 h1 {
