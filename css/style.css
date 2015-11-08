@@ -24,7 +24,17 @@ body, html {
 	width:120px;
 	color:white;
 	top:380px;
-	left:calc(50% - 60px);
+	left:calc(35%);
+	background-image: -webkit-linear-gradient(top, #34d96e, #2bad4e);
+	border:1px solid #bbb;
+}
+.button2 {
+	position:absolute;
+	height:60px;
+	width: 120px;
+	color:white;
+	top:380px;
+	right:calc(35%);
 	background-image: -webkit-linear-gradient(top, #34d96e, #2bad4e);
 	border:1px solid #bbb;
 }
@@ -48,16 +58,10 @@ body, html {
 	display: none;
 }
 .wpm {
-	left: 30%;
-}
-.lol {
-	right:30%;
+	left: 48%;
 }
 .wpm2{
-	left:31.5%;
-}
-.lol2 {
-	right:26%;
+	left:48.5%;
 }
 #canvas {
 	top:80px;

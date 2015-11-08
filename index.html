@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<html lang="en">
   <head>
     <meta charset="utf-8" name="viewport" content="initial-scale=.4, user-scalable=no"></meta>
     <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet' type='text/css'>
@@ -12,12 +11,12 @@
   </head>
   <body>
     <span class='title'>Reedr</span>
+
     <button class='button' onclick='document.getElementById("image-sel").click()'>Upload an image!</button>
+    <button class='button2' >Start</button>
     <input class='upload' type="file" id="image-sel" accept="image/*">
-    <input class='wpm textput' type='number' name='wpm' placeholder='100'>
+    <input class='wpm textput' type='number' id='wpm' placeholder='100'>
     <span class='wpm2 cap'>wpm</span>
-    <input class='lol textput' type='number' name='lol' placeholder='3'>
-    <span class='lol2 cap'>chunk size</span>
     <br>
     <canvas id="canvas" style='background-color:blue'></canvas>
   </body>
