@@ -327,8 +327,7 @@ var Reedr = (function() {
           var x2 = (i + j*W2) * 4;
           var weight = 0;
           var weights = 0;
-          var weights_alpha = 0;
-          var gx_r = 0, gx_g = 0, gx_b = 0, gx_a = 0;
+          var gx_r = 0, gx_g = 0, gx_b = 0;
           var center_y = (j + 0.5) * ratio;
           for (var yy = fr(j*ratio); yy < (j+1)*ratio; yy++) {
             var dy = Math.abs(center_y - (yy + 0.5)) / ratioHalf;
@@ -342,11 +341,7 @@ var Reedr = (function() {
                 weight = 2 * w*w*w - 3*w*w + 1;
                 if (weight > 0) {
                   dx = 4*(xx + yy*img.width);
-                  //alpha
-                  gx_a += weight * data[dx + 3];
-                  weights_alpha += weight;
                   //colors
-                  if(data[dx+3] < 255) weight = weight*data[dx+3] / 250;
                   gx_r += weight * data[dx];
                   gx_g += weight * data[dx + 1];
                   gx_b += weight * data[dx + 2];
@@ -358,7 +353,7 @@ var Reedr = (function() {
           data2[x2] = gx_r/weights;
           data2[x2+1] = gx_g/weights;
           data2[x2+2] = gx_b/weights;
-          data2[x2+3] = gx_a/weights_alpha;
+          data2[x2+3] = 255;
         }
       }
 
