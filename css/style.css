@@ -6,14 +6,12 @@ body, html {
 	background-size:cover;
 	background-repeat: no-repeat;
 	text-align:center;
-	margin:0;
-	padding:0;
 	color:white;
 }
-.title {
 
-	color:white;
+.title {
 	letter-spacing: 2px;
+	font-weight: bold;
 	top:80px;
 	margin:auto;
 	font-size: 70px;
@@ -23,15 +21,12 @@ body, html {
 .button {
 	position:absolute;
 	height:60px;
-	width:100px;
-	background-color:#4dbd33;
+	width:120px;
 	color:white;
-	border:green;
-	top:320px;
-	left:calc(50% - 50px);
+	top:380px;
+	left:calc(50% - 60px);
 	background-image: -webkit-linear-gradient(top, #34d96e, #2bad4e);
-  background-image: linear-gradient(to bottom, #34d96e, #2bad4e);
-  border:1px solid #bbb;
+	border:1px solid #bbb;
 }
 
 .textput {
@@ -39,14 +34,14 @@ body, html {
 	width:50px;
 	height:40px;
 	font-size:12px;
-	top:240px;
+	top:300px;
 	border-radius:50%;
 	border:1px solid #bbb;
 	padding:0 0px 0 10px;
 }
 .cap {
 	position:absolute;
-	top:280px;
+	top:340px;
 	text-shadow: 2px 2px black;
 }
 .upload {
@@ -59,7 +54,7 @@ body, html {
 	right:30%;
 }
 .wpm2{
-	left:32%;
+	left:31.5%;
 }
 .lol2 {
 	right:26%;
@@ -68,7 +63,5 @@ body, html {
 	top:80px;
 	display:none;
 	height:200px;
-	text-align:center;
 	margin:auto;
-	background-color: blue
 }
