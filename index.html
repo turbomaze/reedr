@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
   <head>
     <meta charset="utf-8" name="viewport" content="initial-scale=.4, user-scalable=no"></meta>
-    <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet' type='text/css'>
+    <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet" type="text/css">
     <title>Reedr</title>
 
     <link rel="stylesheet" type="text/css" href="css/toast.css">
@@ -11,14 +10,37 @@
     <script src="js/reedr.js"></script>
   </head>
   <body>
-    <span class='title'>Reedr</span>
-    <button class='button' onclick='document.getElementById("image-sel").click()'>Upload an image!</button>
-    <input class='upload' type="file" id="image-sel" accept="image/*">
-    <input class='wpm textput' type='number' name='wpm' placeholder='100'>
-    <span class='wpm2 cap'>wpm</span>
-    <input class='lol textput' type='number' name='lol' placeholder='3'>
-    <span class='lol2 cap'>chunk size</span>
-    <br>
-    <canvas id="canvas" style='background-color:blue'></canvas>
+    <div class="container">
+      <div class="grid">
+        <div class="unit span-grid">
+          <h1>Reedr</h1>
+        </div>
+      </div>
+    </div>
+
+    <div class="white-bar">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="container">
+      <div class="grid">
+        <div class="unit one-of-two" style="text-align: right">
+          <button id="btn1"
+            onclick="document.getElementById('image-sel').click()">
+            Upload
+          </button>
+        </div>
+        <div class="unit one-of-two" style="text-align: left">
+          <button id="btn2">Start</button>
+        </div>
+        <div class="unit span-grid" style="text-align: center">
+          <input class="wpm textput" type="number" id="wpm"
+                 value="200" min="200" max="1500">
+          <span class="wpm2 cap">wpm</span>
+        </div>
+      </div>
+    </div>
+
+    <input class="upload" type="file" id="image-sel" accept="image/*">
   </body>
 </html>
