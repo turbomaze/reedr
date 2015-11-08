@@ -2,9 +2,11 @@
 | Real Life Speed  |
 |  Reader - Reedr  |
 | @author Anthony  |
-| @version 0.2     |
+| @author Liang    |
+| @author Vahid    |
+| @version 0.3     |
 | @date 2015/11/07 |
-| @edit 2015/11/07 |
+| @edit 2015/11/08 |
 \******************/
 
 var Reedr = (function() {
