@@ -42,7 +42,6 @@ var Reedr = (function() {
         labels = labelWords(blurred);
         var mapping = getMappingFromLabels(labels);
         console.log(mapping);
-        //displayImageBW(labels); //display it
       });
     });
 
@@ -103,6 +102,7 @@ var Reedr = (function() {
   //displays the currently loaded image in BW and returns the BW data
   function displayImageBW(bw) {
     //fix the dimensions
+    canvas.style.display = 'block';
     canvas.style.height = (DISP_WID*(dims[1]/dims[0]))+'px';
     canvas.width = dims[0];
     canvas.height = dims[1];

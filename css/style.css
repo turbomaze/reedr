@@ -1,0 +1,55 @@
+body, html {
+	font-family: Raleway;
+	background-image: url('../shelf.jpg');
+	background-attachment: fixed;
+	background-repeat:no-repeat;
+	background-position: center;
+	background-size: cover;
+	text-align:center;
+	margin:0;
+	padding:0;
+}
+.title {
+	color:white;
+	text-align:center;
+	letter-spacing: 2px;
+	top:120px;
+	margin:auto;
+	font-size: 70px;
+	text-shadow: 2px 2px black;
+}
+
+.button {
+	position:absolute;
+	height:60px;
+	width:100px;
+	background-color:#4dbd33;
+	color:white;
+	font-family:raleway;
+	border:green;
+	top:320px;
+	left:calc(50% - 50px);
+	background-image: -webkit-linear-gradient(top, #34d96e, #2bad4e);
+  background-image: linear-gradient(to bottom, #34d96e, #2bad4e);
+}
+
+.textput {
+	position:absolute;
+	width:50px;
+	height:40px;
+	font-size:24px;
+	top:240px;
+}
+.upload {
+	display: none;
+}
+.wpm {
+	left: 30%;
+}
+.lol {
+	right:30%;
+}
+#canvas {
+	display:none;
+	height:200px;
+}
