@@ -26,6 +26,7 @@ var Reedr = (function() {
   var dims, pixels, labels;
   var gray;
   var mapping, boxes, wordIdx;
+  var isGoing;
 
   /******************
   * work functions */
@@ -40,12 +41,14 @@ var Reedr = (function() {
     dims = [0, 0], pixels = [], labels = [];
     gray = [];
     mapping = [], boxes = [], wordIdx = 0;
+    isGoing = false;
 
     //do work whenever the selected picture changes
     $s('#image-sel').addEventListener('change', function(e) {
       dims = [0, 0], pixels = [], labels = [];
       gray = [];
       mapping = [], boxes = [], wordIdx = 0;
+      isGoing = false;
 
       updatePixelData(e, function() {
         var bw = colToBW(pixels, dims[0]); //first, remove the color
@@ -88,17 +91,25 @@ var Reedr = (function() {
 
     //event handlers
     $s('#btn2').addEventListener('click', function() {
-      displayUntilEnd();
+      if (isGoing) {
+        isGoing = false;
+        $s('#btn2').innerHTML = 'Start';
+      } else {
+        isGoing = true;
+        var delay = 60000/parseInt($s('#wpm').value);
+        $s('#btn2').innerHTML = 'Pause';
+        displayUntilEnd(delay);
+      }
     });
   }
 
-  function displayUntilEnd() {
-    if (wordIdx < boxes.length) {
+  function displayUntilEnd(delay) {
+    if (wordIdx < boxes.length && isGoing) {
       displayWord(wordIdx);
       wordIdx++;
       setTimeout(function() {
-        displayUntilEnd();
-      }, 100);
+        displayUntilEnd(delay);
+      }, delay);
     }
   }
 
