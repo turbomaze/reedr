@@ -13,11 +13,13 @@
     <script src="js/reedr.js"></script>
   </head>
   <body>
-    <h1 class='title'>Reedr</h1>
+    <span class='title'>Reedr</span>
     <button class='button' onclick='document.getElementById("image-sel").click()'>Upload an image!</button>
     <input class='upload' type="file" id="image-sel" accept="image/*">
-    <input class='wpm textput' type='number' name='wpm'>
-    <input class='lol textput' type='number' name='lol'>
+    <input class='wpm textput' type='number' name='wpm' placeholder='100'>
+    <span class='wpm2 cap'>wpm</span>
+    <input class='lol textput' type='number' name='lol' placeholder='3'>
+    <span class='lol2 cap'>chunk size</span>
     <br>
     <canvas id="canvas" style='background-color:blue'></canvas>
   </body>

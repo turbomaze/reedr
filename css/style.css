@@ -1,19 +1,20 @@
 body, html {
-	font-family: Raleway;
+	font-family: raleway;
 	background-image: url('../shelf.jpg');
 	background-attachment: fixed;
-	background-repeat:no-repeat;
 	background-position: center;
-	background-size: cover;
+	background-size:cover;
+	background-repeat: no-repeat;
 	text-align:center;
 	margin:0;
 	padding:0;
+	color:white;
 }
 .title {
+
 	color:white;
-	text-align:center;
 	letter-spacing: 2px;
-	top:120px;
+	top:80px;
 	margin:auto;
 	font-size: 70px;
 	text-shadow: 2px 2px black;
@@ -25,20 +26,28 @@ body, html {
 	width:100px;
 	background-color:#4dbd33;
 	color:white;
-	font-family:raleway;
 	border:green;
 	top:320px;
 	left:calc(50% - 50px);
 	background-image: -webkit-linear-gradient(top, #34d96e, #2bad4e);
   background-image: linear-gradient(to bottom, #34d96e, #2bad4e);
+  border:1px solid #bbb;
 }
 
 .textput {
 	position:absolute;
 	width:50px;
 	height:40px;
-	font-size:24px;
+	font-size:12px;
 	top:240px;
+	border-radius:50%;
+	border:1px solid #bbb;
+	padding:0 0px 0 10px;
+}
+.cap {
+	position:absolute;
+	top:280px;
+	text-shadow: 2px 2px black;
 }
 .upload {
 	display: none;
@@ -49,7 +58,17 @@ body, html {
 .lol {
 	right:30%;
 }
+.wpm2{
+	left:32%;
+}
+.lol2 {
+	right:26%;
+}
 #canvas {
+	top:80px;
 	display:none;
 	height:200px;
+	text-align:center;
+	margin:auto;
+	background-color: blue
 }
