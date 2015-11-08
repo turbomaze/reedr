@@ -18,11 +18,18 @@ var Reedr = (function() {
   /*************
    * constants */
   var fr = Math.floor;
+  var mx = Math.max;
+  var mn = Math.min;
+  var k = Array.prototype;
+  k.p = k.push;
+  k.q = k.filter;
+  k.r = k.forEach;
+  k.u = k.concat;
 
   /*********************
    * working variables */
   var canvas, ctx;
-  var dims, pixels;
+  var dw, dh, pixels;
   var gray;
   var mapping, boxes, wordIdx;
 
@@ -36,27 +43,27 @@ var Reedr = (function() {
     ctx = canvas.getContext('2d');
 
     //misc variable init
-    dims = [0, 0], pixels = [];
+    dw = 0, dh = 0, pixels = [];
     gray = [];
     mapping = [], boxes = [], wordIdx = 0;
 
     //do work whenever the selected picture changes
     $s('#d').addEventListener('change', function(e) {
-      dims = [0, 0], pixels = [];
+      dw = 0, dh = 0, pixels = [];
       gray = [];
       mapping = [], boxes = [], wordIdx = 0;
 
       updatePixelData(e, function() {
         mapping = getMappingFromLabels(labelWords(getSmoothing(getSmoothing(colToBW(
-          pixels, dims[0]
-        )))), dims[0]);
+          pixels, dw
+        )))), dw);
         boxes = getBoxes(mapping);
 
         //sort the boxes
         boxes = sortBoxes(boxes);
 
         //get a nice gray representation of the image
-        gray = colToGray(pixels, dims[0], true, 1.6);
+        gray = colToGray(pixels, dw, true, 1.6);
 
         //prep the canvas
         canvas.width = DISP_WID;
@@ -107,18 +114,20 @@ var Reedr = (function() {
           for (var x = 0; x < width; x++) {
             for (var y = data.length/(4*width)-1; y >= 0; y--) {
               var idx = 4*(y*width+x); //idx in data
-              pixels.push(data[idx]);
-              pixels.push(data[idx+1]);
-              pixels.push(data[idx+2]);
-              pixels.push(data[idx+3]);
+              pixels.p(data[idx]);
+              pixels.p(data[idx+1]);
+              pixels.p(data[idx+2]);
+              pixels.p(data[idx+3]);
             }
           }
           //update the dimension and pixels working vars
-          dims = [data.length/(4*width), width];
+          dw = data.length/(4*width);
+          dh = width;
         } else {
           //keep its orientation
           pixels = data;
-          dims = [width, data.length/(4*width)];
+          dw = width;
+          dh = data.length/(4*width);
         }
 
         //get rid of the blob and finish
@@ -132,15 +141,15 @@ var Reedr = (function() {
   function displayImageBW(bw) {
     //fix the dimensions
     canvas.style.display = 'block';
-    canvas.style.height = (DISP_WID*(dims[1]/dims[0]))+'px';
-    canvas.width = dims[0];
-    canvas.height = dims[1];
+    canvas.style.height = (DISP_WID*(dh/dw))+'px';
+    canvas.width = dw;
+    canvas.height = dh;
 
     //display the bw image
-    var currImageData = ctx.getImageData(0, 0, dims[0], dims[1]);
-    for (var y = 0; y < dims[1]; y++) { //for all intended rows
-      for (var x = 0; x < dims[0]; x++) { //and for each intended column
-        var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
+    var currImageData = ctx.getImageData(0, 0, dw, dh);
+    for (var y = 0; y < dh; y++) { //for all intended rows
+      for (var x = 0; x < dw; x++) { //and for each intended column
+        var idx = 4*(dw*y + x); //idx of this pixel in the pixels array
         for (var c = 0; c < 3; c++) { //and for all three colors, lol c++
           currImageData.data[idx+c] = fr(255*bw[idx/4]);
         }
@@ -154,24 +163,24 @@ var Reedr = (function() {
   function getSmoothing(bw) {
     var gauss = [];
     for (var i = 0; i < bw.length; i++) {
-      gauss.push(0);
+      gauss.p(0);
     }
 
     var dists = [];
     for (var j = -4; j <= 4; j++) {
-      dists.push([]);
+      dists.p([]);
       for (var k = -4; k <= 4; k++) {
-        dists[j + 4].push(gaussDist(j, k));
+        dists[j + 4].p(gaussDist(j, k));
       }
     }
 
     for (var i = 0; i < bw.length; i++) {
       if (bw[i] === 0) {
-        var row = fr(i / dims[0]);
-        var col = i % dims[0];
-        for (var j = Math.max(row-4, 0); j <= Math.min(row+4, dims[1]-1); j++) {
-          for (var k = Math.max(col-4,0); k <= Math.min(col+4,dims[0]-1); k++) {
-            gauss[j * dims[0] + k] += 4 * dists[j + 4 - row][k + 4 - col];
+        var row = fr(i / dw);
+        var col = i % dw;
+        for (var j = Math.max(row-4, 0); j <= Math.min(row+4, dh-1); j++) {
+          for (var k = Math.max(col-4,0); k <= Math.min(col+4,dw-1); k++) {
+            gauss[j * dw + k] += 4 * dists[j + 4 - row][k + 4 - col];
           }
         }
       }
@@ -191,46 +200,46 @@ var Reedr = (function() {
     var threshold = 0.5;
     var labels = [];
     for (var i = 0; i < blurred.length; i++) {
-      labels.push(0);
+      labels.p(0);
     }
     var val = 1;
     var counter = 0;
     for (var i = 0; i < blurred.length; i++) {
-      if (labels[i] != 0 || blurred[i] === 1) {
+      if (labels[i] !== 0 || blurred[i] === 1) {
         continue;
       } else {
         var q = [i];
         var ind = 0;
         while (ind < q.length) {
           var cur = q[ind];
-          var row = fr(cur / dims[0])
-          var col = cur % dims[0];
-          if (row + 1 < dims[1]) {
-            var el = (row + 1) * dims[0] + col;
+          var row = fr(cur / dw)
+          var col = cur % dw;
+          if (row + 1 < dh) {
+            var el = (row + 1) * dw + col;
             if (blurred[el] < threshold && labels[el] === 0) {
               labels[el] = val;
-              q.push(el);
+              q.p(el);
             }
           }
           if (row - 1 >= 0) {
-            var el = (row - 1) * dims[0] + col;
+            var el = (row - 1) * dw + col;
             if (blurred[el] < threshold && labels[el] === 0) {
               labels[el] = val;
-              q.push(el);
+              q.p(el);
             }
           }
           if (col - 1 >= 0) {
-            var el = row * dims[0] + col - 1;
+            var el = row * dw + col - 1;
             if (blurred[el] < threshold && labels[el] === 0) {
               labels[el] = val;
-              q.push(el);
+              q.p(el);
             }
           }
-          if (col + 1 < dims[0]) {
-            var el = row * dims[0] + col + 1;
+          if (col + 1 < dw) {
+            var el = row * dw + col + 1;
             if (blurred[el] < threshold && labels[el] === 0) {
               labels[el] = val;
-              q.push(el);
+              q.p(el);
             }
           }
           ind++;
@@ -251,11 +260,11 @@ var Reedr = (function() {
     for (var y = box[1]; y < box[1]+box[3]; y++) {
       for (var x = box[0]; x < box[0]+box[2]; x++) {
         if (wordPxs.hasOwnProperty(x+','+y)) {
-          var idx = y*dims[0] + x;
+          var idx = y*dw + x;
           var fl = fr(gray[idx]);
-          pxs = pxs.concat(fl, fl, fl, 255);
+          pxs = pxs.u(fl, fl, fl, 255);
         } else {
-          pxs = pxs.concat([255, 255, 255, 255]);
+          pxs = pxs.u([255, 255, 255, 255]);
         }
       }
     }
@@ -280,7 +289,7 @@ var Reedr = (function() {
   //this function maps word indices to all their constituent pixel locations
   function getMappingFromLabels(labels, width) {
     var mapping = {};
-    labels.forEach(function(label, idx) {
+    labels.r(function(label, idx) {
       if (label === 0) return; //ignore zero
 
       var x = idx % width;
@@ -298,7 +307,7 @@ var Reedr = (function() {
         mapping.hasOwnProperty(wi) &&
         Object.keys(mapping[wi]).length >= minNumPxs
       ) {
-        ret.push(mapping[wi]);
+        ret.p(mapping[wi]);
       }
     }
     return ret; //array of objects, px locations as keys
@@ -319,13 +328,13 @@ var Reedr = (function() {
     var ht = data.length/(4*width);
     for (var y = 0; y < ht; y++) { //for all intended rows
       for (var x = 0; x < width; x++) { //and for each intended column
-        var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
+        var idx = 4*(dw*y + x); //idx of this pixel in the pixels array
         var val = 0.21*data[idx]+0.72*data[idx+1]+0.07*data[idx+2];
-        gray.push(Math.min(255, fr(contrast*val)));
+        gray.p(Math.min(255, fr(contrast*val)));
         avgGray += val;
       }
     }
-    avgGray /= dims[0]*dims[1];
+    avgGray /= dw*dh;
     if (wantAverage) return [avgGray, gray];
     else return gray;
   }
@@ -426,7 +435,7 @@ var Reedr = (function() {
     return mapping.map(function (pxList, idx) {
         var minx = 1/0, miny = 1/0;
         var maxx = -1/0, maxy = -1/0;
-        Object.keys(pxList).forEach(function (key) {
+        Object.keys(pxList).r(function (key) {
           var pixel = key.split(',').map(function(comp) {
             return parseInt(comp);
           });
@@ -447,7 +456,7 @@ var Reedr = (function() {
           }
         });
         return [minx, miny, (maxx-minx), (maxy-miny), idx];
-    }).filter(function(box) {
+    }).q(function(box) {
       return box[2] > 4 && box[2] > 4;
     });
   }
@@ -463,13 +472,13 @@ function sortBoxes(bxs) {
           var last = sortedBoxes[sortedBoxes.length-1];
           var line = [];
 
-          bxs.forEach(function (box, index) {
+          bxs.r(function (box, index) {
               if (sameLine(last, box)) {
-                  line.push(box.concat([index]));
+                  line.p(box.u([index]));
               }
           });
 
-          line = line.filter(function (box){
+          line = line.q(function (box){
               var distance = (box[0] + box[2]/2) - (last[0] + last[2]/2);
               var maxDistance = box[2] + last[2];
               return ((distance > 0) && (distance < maxDistance));
@@ -490,10 +499,10 @@ function sortBoxes(bxs) {
           next = bxs.reduce(function(a, b, idx) {
             if (a[0]+a[1]*slope < b[0]+b[1]*slope) {
               return a;
-            } else return b.concat([idx]);
+            } else return b.u([idx]);
           }, [1/0, 1/0, 1/0, 1/0, -1]);
       }
-      sortedBoxes.push(bxs.splice(next[5], 1)[0]);
+      sortedBoxes.p(bxs.splice(next[5], 1)[0]);
   }
   return sortedBoxes;
 }
