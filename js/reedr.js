@@ -72,13 +72,16 @@ var Reedr = (function() {
 
         //controls to box words
         var wordIdx = 0;
+        var gray = colToGray(pixels, dims[0]);
         window.addEventListener('keydown', function(e) {
           if (e.keyCode === 32) { //space
             wordIdx += 1;
 
             drawPxArray(
-              getWordPicInBox(mapping, boxes[wordIdx]),
-              boxes[wordIdx][2]
+              getWordPicInBox(
+                gray,
+                mapping, boxes[wordIdx]
+              ), boxes[wordIdx][2]
             );
           }
         });
@@ -244,20 +247,20 @@ var Reedr = (function() {
   /********************
    * helper functions */
   //given a mapping and a box descriptor, return an image of the word
-  function getWordPicInBox(mapping, box) {
+  function getWordPicInBox(gray, mapping, box) {
     var pxs = [];
     var wordPxs = mapping[box[4]];
     for (var y = box[1]; y < box[1]+box[3]; y++) {
       for (var x = box[0]; x < box[0]+box[2]; x++) {
         if (wordPxs.hasOwnProperty(x+','+y)) {
-          var idx = 4*(y*dims[0] + x);
-          pxs.push(pixels[idx]);
-          pxs.push(pixels[idx+1]);
-          pxs.push(pixels[idx+2]);
-          pxs.push(pixels[idx+3]);
+          var idx = y*dims[0] + x;
+          pxs.push(Math.floor(gray[idx]));
+          pxs.push(Math.floor(gray[idx]));
+          pxs.push(Math.floor(gray[idx]));
         } else {
-          pxs.push(255), pxs.push(255), pxs.push(255), pxs.push(255);
+          pxs.push(170), pxs.push(170), pxs.push(170);
         }
+        pxs.push(255); //opacity
       }
     }
 
@@ -318,8 +321,8 @@ var Reedr = (function() {
     });
   }
 
-  //converts an RGBA image array into a binary array (black and white)
-  function colToBW(data, width, thresh) {
+  //converts an RGBA image array into a grayscale image array
+  function colToGray(data, width, thresh, wantAverage) {
     thresh = thresh || 0.75;
 
     //convert to grayscale
@@ -334,8 +337,17 @@ var Reedr = (function() {
       }
     }
     avgGray /= dims[0]*dims[1];
+    if (wantAverage) return [avgGray, gray];
+    else return gray;
+  }
 
-    return grayToBW(gray, width, thresh*avgGray);
+  //converts an RGBA image array into a binary array (black and white)
+  function colToBW(data, width, thresh) {
+    thresh = thresh || 0.75;
+
+    //convert to grayscale
+    var grayAndAvg = colToGray(data, width, thresh, true);
+    return grayToBW(grayAndAvg[1], width, thresh*grayAndAvg[0]);
   }
 
   //given a url, provides a callback with the pixel data of the corresp image
