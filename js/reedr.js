@@ -81,10 +81,14 @@ var Reedr = (function() {
         canvas.style.width = DISP_WID+'px';
         canvas.style.height = WORD_DISP_HT+'px';
 
-        displayUntilEnd();
-
-        document.getElementById('canvas').focus();
+        //display the first word
+        displayWord(0);
       });
+    });
+
+    //event handlers
+    $s('#btn2').addEventListener('click', function() {
+      displayUntilEnd();
     });
   }
 

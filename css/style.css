@@ -9,63 +9,59 @@ body, html {
 	color:white;
 }
 
-.title {
+h1 {
 	letter-spacing: 2px;
 	font-weight: bold;
-	top:80px;
-	margin:auto;
-	font-size: 70px;
+	margin: auto;
+	margin-top: 3rem;
+	margin-bottom: 1rem;
+	font-size: 5rem;
 	text-shadow: 2px 2px black;
 }
 
-.button {
-	position:absolute;
-	height:60px;
-	width:120px;
-	color:white;
-	top:380px;
-	left:calc(35%);
+#btn1, #btn2 {
+	height: 3.5rem;
+	width: 7rem;
+	color: white;
+	font-size: 1.5rem;
 	background-image: -webkit-linear-gradient(top, #34d96e, #2bad4e);
-	border:1px solid #bbb;
+	border: 1px solid #bbb;
 }
-.button2 {
-	position:absolute;
-	height:60px;
-	width: 120px;
-	color:white;
-	top:380px;
-	right:calc(35%);
-	background-image: -webkit-linear-gradient(top, #34d96e, #2bad4e);
-	border:1px solid #bbb;
+
+#btn1:hover, #btn2:hover {
+	background-image: -webkit-linear-gradient(top, #37CC6B, #228A3E);
 }
 
 .textput {
-	position:absolute;
-	width:50px;
-	height:40px;
-	font-size:12px;
-	top:300px;
-	border-radius:50%;
+	margin-top: 2rem;
+	width: 4rem;
+	height: 3rem;
+	font-size: 1rem;
+	border-radius: 50%;
+	text-align: center;
 	border:1px solid #bbb;
-	padding:0 0px 0 10px;
+	padding: 0 0px 0 10px;
 }
 .cap {
-	position:absolute;
-	top:340px;
 	text-shadow: 2px 2px black;
 }
 .upload {
 	display: none;
 }
 .wpm {
-	left: 48%;
 }
 .wpm2{
-	left:48.5%;
 }
+
 #canvas {
-	top:80px;
-	display:none;
-	height:200px;
-	margin:auto;
+	margin: 0 auto;
+	padding-top: 1.25rem;
+}
+
+.white-bar {
+	width: 100%;
+	height: 5rem;
+	background: white;
+	margin-bottom: 2rem;
+	text-align: center;
 }
