@@ -13,6 +13,7 @@ var Reedr = (function() {
   /**********
    * config */
   var DISP_WID = 360;
+  var WORD_DISP_HT = 80;
 
   /*************
    * constants */
@@ -61,25 +62,22 @@ var Reedr = (function() {
           return score1 - score2;
         });
 
-        //get the first word
-        var first = boxes.reduce(function(a, b, idx) {
-          if (a[0]+a[1] < b[0]+b[1]) {
-            return a;
-          } else return b.concat([idx]);
-        }, [Infinity, Infinity, Infinity, Infinity, -1]);
-        ctx.strokeStyle = 'red';
-        ctx.strokeRect.apply(ctx, first);
-
         //controls to box words
         var wordIdx = 0;
-        var gray = colToGray(pixels, dims[0]);
+        var gray = colToGray(pixels, dims[0], true, 1.6);
         window.addEventListener('keydown', function(e) {
           if (e.keyCode === 32) { //space
+            canvas.width = DISP_WID;
+            canvas.height = WORD_DISP_HT;
+            canvas.style.width = DISP_WID+'px';
+            canvas.style.height = WORD_DISP_HT+'px';
+
             wordIdx += 1;
 
-            drawPxArray(
+            drawWordPxArray(
               getWordPicInBox(
-                gray,
+                gray[1],
+                gray[0],
                 mapping, boxes[wordIdx]
               ), boxes[wordIdx][2]
             );
@@ -247,7 +245,7 @@ var Reedr = (function() {
   /********************
    * helper functions */
   //given a mapping and a box descriptor, return an image of the word
-  function getWordPicInBox(gray, mapping, box) {
+  function getWordPicInBox(gray, avgGray, mapping, box) {
     var pxs = [];
     var wordPxs = mapping[box[4]];
     for (var y = box[1]; y < box[1]+box[3]; y++) {
@@ -258,7 +256,9 @@ var Reedr = (function() {
           pxs.push(Math.floor(gray[idx]));
           pxs.push(Math.floor(gray[idx]));
         } else {
-          pxs.push(170), pxs.push(170), pxs.push(170);
+          pxs.push(255);
+          pxs.push(255);
+          pxs.push(255);
         }
         pxs.push(255); //opacity
       }
@@ -268,23 +268,17 @@ var Reedr = (function() {
   }
 
   //given an array of color info, render that to the canvas
-  function drawPxArray(arr, width) {
-    canvas.width = width;
-    canvas.height = arr.length/(4*width);
-    canvas.style.width = 3*canvas.width +'px';
-    canvas.style.height = 3*canvas.height + 'px';
-
+  function drawWordPxArray(arr, width) {
     //display the bw image
-    var currImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    for (var y = 0; y < canvas.height; y++) { //for all intended rows
-      for (var x = 0; x < canvas.width; x++) { //and for each intended column
-        var idx = 4*(canvas.width*y + x); //idx of this px in the pixels arr
-        for (var c = 0; c < 4; c++) { //and for all three colors, lol c++
-          currImageData.data[idx+c] = arr[idx+c];
-        }
-      }
+    var xOff = (canvas.width - width)/2;
+    var yOff = (canvas.height - arr.length/(4*width))/2;
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    var currImageData = ctx.getImageData(0, 0, width, arr.length/(4*width));
+    for (var ai = 0; ai < arr.length; ai++) {
+      currImageData.data[ai] = arr[ai];
     }
-    ctx.putImageData(currImageData, 0, 0);
+    ctx.putImageData(currImageData, xOff, yOff);
   }
 
   //this function maps word indices to all their constituent pixel locations
@@ -322,9 +316,8 @@ var Reedr = (function() {
   }
 
   //converts an RGBA image array into a grayscale image array
-  function colToGray(data, width, thresh, wantAverage) {
-    thresh = thresh || 0.75;
-
+  function colToGray(data, width, wantAverage, contrast) {
+    contrast = contrast || 1;
     //convert to grayscale
     var gray = [], avgGray = 0;
     var ht = data.length/(4*width);
@@ -332,7 +325,7 @@ var Reedr = (function() {
       for (var x = 0; x < width; x++) { //and for each intended column
         var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
         var val = 0.21*data[idx]+0.72*data[idx+1]+0.07*data[idx+2];
-        gray.push(val);
+        gray.push(Math.min(255, Math.floor(contrast*val)));
         avgGray += val;
       }
     }
@@ -346,7 +339,7 @@ var Reedr = (function() {
     thresh = thresh || 0.75;
 
     //convert to grayscale
-    var grayAndAvg = colToGray(data, width, thresh, true);
+    var grayAndAvg = colToGray(data, width, true);
     return grayToBW(grayAndAvg[1], width, thresh*grayAndAvg[0]);
   }
 
