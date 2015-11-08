@@ -18,15 +18,15 @@ h1 {
 	margin: auto;
 	margin-top: 3rem;
 	margin-bottom: 1rem;
-	font-size: 5rem;
+	font-size: 7rem;
 	text-shadow: 2px 2px black;
 }
 
 #btn1, #btn2 {
-	height: 3.5rem;
-	width: 7rem;
+	height: 5rem;
+	width: 9rem;
 	color: white;
-	font-size: 1.5rem;
+	font-size: 2rem;
 	background-image: -webkit-linear-gradient(top, #34d96e, #2bad4e);
 	border: 1px solid #bbb;
 }
@@ -37,16 +37,16 @@ h1 {
 
 .textput {
 	margin-top: 2rem;
-	width: 4rem;
-	height: 3rem;
-	font-size: 1rem;
-	border-radius: 50%;
+	width: 8rem;
+	height: 5rem;
+	font-size: 2rem;
+	border-radius: 10%;
 	text-align: center;
 	border:1px solid #bbb;
-	padding: 0 0px 0 10px;
 }
 .cap {
 	text-shadow: 2px 2px black;
+	font-size: 2rem;
 }
 .upload {
 	display: none;
@@ -63,7 +63,7 @@ h1 {
 
 .white-bar {
 	width: 100%;
-	height: 5rem;
+	height: 10rem;
 	background: white;
 	margin-bottom: 2rem;
 	text-align: center;

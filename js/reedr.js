@@ -14,8 +14,8 @@ var Reedr = (function() {
 
   /**********
    * config */
-  var DISP_WID = 360;
-  var WORD_DISP_HT = 80;
+  var DISP_WID = 180;
+  var WORD_DISP_HT = 40;
 
   /*************
    * constants */
@@ -79,10 +79,10 @@ var Reedr = (function() {
         gray = colToGray(pixels, dims[0], true, 1.6);
 
         //prep the canvas
-        canvas.width = DISP_WID/2;
-        canvas.height = WORD_DISP_HT/2;
-        canvas.style.width = DISP_WID+'px';
-        canvas.style.height = WORD_DISP_HT+'px';
+        canvas.width = DISP_WID;
+        canvas.height = WORD_DISP_HT;
+        canvas.style.width = 4*DISP_WID+'px';
+        canvas.style.height = 4*WORD_DISP_HT+'px';
 
         //display the first word
         displayWord(0);
@@ -132,7 +132,7 @@ var Reedr = (function() {
       //get the file
       var windowURL = window.URL || window.webkitURL;
       var picURL = windowURL.createObjectURL(fileInput[0]);
-      getPixelsFromImage(picURL, 2*DISP_WID, function(data, width, time) {
+      getPixelsFromImage(picURL, 4*DISP_WID, function(data, width, time) {
         //report out
         console.log('Finished loading pixels in '+time+'ms.');
 
