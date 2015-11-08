@@ -10,8 +10,6 @@
 \******************/
 
 var Reedr = (function() {
-  'use strict';
-
   /**********
    * config */
   var DISP_WID = 180;
@@ -32,7 +30,7 @@ var Reedr = (function() {
   * work functions */
   function initReedr() {
     //canvas stuff
-    canvas = $s('#canvas');
+    canvas = $s('#c');
     canvas.style.width = DISP_WID+'px';
     canvas.style.height = DISP_WID+'px';
     ctx = canvas.getContext('2d');
@@ -44,7 +42,7 @@ var Reedr = (function() {
     isGoing = false;
 
     //do work whenever the selected picture changes
-    $s('#image-sel').addEventListener('change', function(e) {
+    $s('#d').addEventListener('change', function(e) {
       dims = [0, 0], pixels = [], labels = [];
       gray = [];
       mapping = [], boxes = [], wordIdx = 0;
@@ -78,14 +76,13 @@ var Reedr = (function() {
     });
 
     //event handlers
-    $s('#btn2').addEventListener('click', function() {
-      if (isGoing) {
-        isGoing = false;
-        $s('#btn2').innerHTML = 'Start';
+    $s('#b').addEventListener('click', function() {
+      isGoing = !isGoing;
+      if (!isGoing) {
+        $s('#b').innerHTML = 'Start';
       } else {
-        isGoing = true;
-        var delay = 60000/parseInt($s('#wpm').value);
-        $s('#btn2').innerHTML = 'Pause';
+        var delay = 60000/parseInt($s('#w').value);
+        $s('#b').innerHTML = 'Pause';
         displayUntilEnd(delay);
       }
     });
@@ -118,12 +115,8 @@ var Reedr = (function() {
     var fileInput = e.target.files;
     if (fileInput.length > 0) {
       //get the file
-      var windowURL = window.URL || window.webkitURL;
-      var picURL = windowURL.createObjectURL(fileInput[0]);
-      getPixelsFromImage(picURL, 4*DISP_WID, function(data, width, time) {
-        //report out
-        console.log('Finished loading pixels in '+time+'ms.');
-
+      var picURL = URL.createObjectURL(fileInput[0]);
+      getPixelsFromImage(picURL, 4*DISP_WID, function(data, width) {
         //fix funky orientations
         if (width > data.length/(4*width)) {
           //rotate it
@@ -146,7 +139,7 @@ var Reedr = (function() {
         }
 
         //get rid of the blob and finish
-        windowURL.revokeObjectURL(picURL);
+        URL.revokeObjectURL(picURL);
         callback();
       });
     }
@@ -185,7 +178,7 @@ var Reedr = (function() {
     for (var j = -4; j <= 4; j++) {
       dists.push([]);
       for (var k = -4; k <= 4; k++) {
-        dists[j + 4].push(gaussDist(j, k, 1, 1.6));
+        dists[j + 4].push(gaussDist(j, k));
       }
     }
 
@@ -276,15 +269,11 @@ var Reedr = (function() {
       for (var x = box[0]; x < box[0]+box[2]; x++) {
         if (wordPxs.hasOwnProperty(x+','+y)) {
           var idx = y*dims[0] + x;
-          pxs.push(Math.floor(gray[idx]));
-          pxs.push(Math.floor(gray[idx]));
-          pxs.push(Math.floor(gray[idx]));
+          var fl = Math.floor(gray[idx]);
+          pxs = pxs.concat(fl, fl, fl, 255);
         } else {
-          pxs.push(255);
-          pxs.push(255);
-          pxs.push(255);
+          pxs = pxs.concat([255, 255, 255, 255]);
         }
-        pxs.push(255); //opacity
       }
     }
 
@@ -433,19 +422,17 @@ var Reedr = (function() {
 
       //...all so you can send the pixels, width, and the time taken to get
       //them back through the callback
-      callback(data2, W2, new Date().getTime() - timeStartedGettingPixels);
+      callback(data2, W2);
     };
 
     img.src = location; //load the image
   }
 
   //two dimensional gaussian distribution function with variance parameters
-  function gaussDist(x, y, sigma1, sigma2) {
-    sigma1 = sigma1 || 1;
-    sigma2 = sigma2 || sigma1;
-    return (1/(2*Math.PI*sigma1*sigma2))*Math.exp(
-      -(x*x)/(2*sigma1*sigma1) +
-      -(y*y)/(2*sigma2*sigma2)
+  function gaussDist(x, y) {
+    return (1/(2*Math.PI*1.6))*Math.exp(
+      -(x*x)/2 +
+      -(y*y)/(2*1.6*1.6)
     );
   }
 
@@ -454,8 +441,8 @@ var Reedr = (function() {
   // dimensions: [x, y, width, height, idxInMapping]
   function getBoxes(mapping) {
     return mapping.map(function (pxList, idx) {
-        var minx = Infinity, miny = Infinity;
-        var maxx = -Infinity, maxy = -Infinity;
+        var minx = 1/0, miny = 1/0;
+        var maxx = -1/0, maxy = -1/0;
         Object.keys(pxList).forEach(function (key) {
           var pixel = key.split(',').map(function(comp) {
             return parseInt(comp);
@@ -519,7 +506,7 @@ function sortBoxes(bxs) {
             if (a[0]+a[1]*slope < b[0]+b[1]*slope) {
               return a;
             } else return b.concat([idx]);
-          }, [Infinity, Infinity, Infinity, Infinity, -1]);
+          }, [1/0, 1/0, 1/0, 1/0, -1]);
       }
       sortedBoxes.push(bxs.splice(next[5], 1)[0]);
   }

@@ -22,7 +22,7 @@ h1 {
 	text-shadow: 2px 2px black;
 }
 
-#btn1, #btn2 {
+#a, #b {
 	height: 5rem;
 	width: 9rem;
 	color: white;
@@ -31,7 +31,7 @@ h1 {
 	border: 1px solid #bbb;
 }
 
-#btn1:hover, #btn2:hover {
+#a:hover, #b:hover {
 	background-image: -webkit-linear-gradient(top, #37CC6B, #228A3E);
 }
 
@@ -56,7 +56,7 @@ h1 {
 .wpm2{
 }
 
-#canvas {
+#c {
 	margin: 0 auto;
 	padding-top: 1.25rem;
 }
