@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
+          <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet' type='text/css'>
     <title>Reedr</title>
 
     <link rel="stylesheet" type="text/css" href="css/toast.css">
@@ -12,9 +13,12 @@
     <script src="js/reedr.js"></script>
   </head>
   <body>
-    <h1>Reedr</h1>
-    <input type="file" id="image-sel" accept="image/*">
+    <h1 class='title'>Reedr</h1>
+    <button class='button' onclick='document.getElementById("image-sel").click()'>Upload an image!</button>
+    <input class='upload' type="file" id="image-sel" accept="image/*">
+    <input class='wpm textput' type='number' name='wpm'>
+    <input class='lol textput' type='number' name='lol'>
     <br>
-    <canvas id="canvas"></canvas>
+    <canvas id="canvas" style='background-color:blue'></canvas>
   </body>
 </html>
