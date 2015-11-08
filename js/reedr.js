@@ -42,6 +42,7 @@ var Reedr = (function() {
         var labeled = labelWords(blurred);
         bw = grayToBW(blurred, dims[0], 0.5); //finally, go back to bw
         displayImageBW(labeled); //display it
+        document.getElementById('canvas').style.display = 'block';
       });
     });
   }
@@ -136,7 +137,7 @@ var Reedr = (function() {
       }
     }
     for (var i = 0; i < gauss.length; i++) {
-      if (gauss[i] > 0.4) {
+      if (gauss[i] > 0.7) {
         gauss[i] = 0;
       } else {
         gauss[i] = 1;
