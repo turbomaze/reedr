@@ -40,8 +40,14 @@ var Reedr = (function() {
         var bw = colToBW(pixels, dims[0]); //first, remove the color
         var blurred = getSmoothing(getSmoothing(bw)); //then, blur it
         labels = labelWords(blurred);
-        var mapping = getMappingFromLabels(labels);
-        console.log(mapping);
+        var mapping = getMappingFromLabels(labels, dims[0]);
+        var boxes = getBoxes(mapping);
+        displayImageBW(bw);
+        boxes.forEach(function(box) {
+          ctx.strokeStyle = 'red';
+          ctx.strokeRect.apply(ctx, box);
+        });
+        console.log(getBoxes(mapping));
       });
     });
 
@@ -339,7 +345,7 @@ var Reedr = (function() {
 
   //two dimensional gaussian distribution function with variance parameters
   function gaussDist(x, y, sigma1, sigma2) {
-    sigma1 = sigma1 || 0.84089642;
+    sigma1 = sigma1 || 1;
     sigma2 = sigma2 || sigma1;
     return (1/(2*Math.PI*sigma1*sigma2))*Math.exp(
       -(x*x)/(2*sigma1*sigma1) +
@@ -351,12 +357,11 @@ var Reedr = (function() {
   // return a list with coordinates of top left of bounding box and
   // dimensions: [x, y, width, height]
   function getBoxes(mapping) {
-    return mapping.map(function (word) {
-        var minx = Infinity;
-        var miny = Infinity;
-        var maxx = -Infinity;
-        var maxy = -Infinity;
-        word.forEach(function (pixel) {
+    console.log(mapping)
+    return mapping.map(function (pxList) {
+        var minx = Infinity, miny = Infinity;
+        var maxx = -Infinity, maxy = -Infinity;
+        pxList.forEach(function (pixel) {
             if (pixel[0] < minx) {
                 minx = pixel[0];
             }
