@@ -1,74 +1,70 @@
+html {
+	min-height:100%;
+	background-image: url('../shelf.jpg');
+	background-size: cover;
+	background-position:center;
+	background-repeat: no-repeat;
+}
+
 body, html {
 	font-family: raleway;
-	background-image: url('../shelf.jpg');
-	background-attachment: fixed;
-	background-position: center;
-	background-size:cover;
-	background-repeat: no-repeat;
 	text-align:center;
-	margin:0;
-	padding:0;
-	color:white;
+	color: white;
 }
-.title {
 
-	color:white;
+h1 {
 	letter-spacing: 2px;
-	top:80px;
-	margin:auto;
-	font-size: 70px;
+	font-weight: bold;
+	margin: auto;
+	margin-top: 3rem;
+	margin-bottom: 1rem;
+	font-size: 7rem;
 	text-shadow: 2px 2px black;
 }
 
-.button {
-	position:absolute;
-	height:60px;
-	width:100px;
-	background-color:#4dbd33;
-	color:white;
-	border:green;
-	top:320px;
-	left:calc(50% - 50px);
+#btn1, #btn2 {
+	height: 5rem;
+	width: 9rem;
+	color: white;
+	font-size: 2rem;
 	background-image: -webkit-linear-gradient(top, #34d96e, #2bad4e);
-  background-image: linear-gradient(to bottom, #34d96e, #2bad4e);
-  border:1px solid #bbb;
+	border: 1px solid #bbb;
+}
+
+#btn1:hover, #btn2:hover {
+	background-image: -webkit-linear-gradient(top, #37CC6B, #228A3E);
 }
 
 .textput {
-	position:absolute;
-	width:50px;
-	height:40px;
-	font-size:12px;
-	top:240px;
-	border-radius:50%;
+	margin-top: 2rem;
+	width: 8rem;
+	height: 5rem;
+	font-size: 2rem;
+	border-radius: 10%;
+	text-align: center;
 	border:1px solid #bbb;
-	padding:0 0px 0 10px;
 }
 .cap {
-	position:absolute;
-	top:280px;
 	text-shadow: 2px 2px black;
+	font-size: 2rem;
 }
 .upload {
 	display: none;
 }
 .wpm {
-	left: 30%;
-}
-.lol {
-	right:30%;
 }
 .wpm2{
-	left:32%;
 }
-.lol2 {
-	right:26%;
-}
+
 #canvas {
-	top:80px;
-	display:none;
-	height:200px;
-	text-align:center;
-	margin:auto;
-	background-color: blue
+	margin: 0 auto;
+	padding-top: 1.25rem;
+}
+
+.white-bar {
+	width: 100%;
+	height: 10rem;
+	background: white;
+	margin-bottom: 2rem;
+	text-align: center;
 }

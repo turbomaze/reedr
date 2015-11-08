@@ -4,7 +4,7 @@
 | @author Anthony  |
 | @author Liang    |
 | @author Vahid    |
-| @version 0.3     |
+| @version 1.0     |
 | @date 2015/11/07 |
 | @edit 2015/11/08 |
 \******************/
@@ -14,8 +14,8 @@ var Reedr = (function() {
 
   /**********
    * config */
-  var DISP_WID = 360;
-  var WORD_DISP_HT = 80;
+  var DISP_WID = 180;
+  var WORD_DISP_HT = 40;
 
   /*************
    * constants */
@@ -26,6 +26,7 @@ var Reedr = (function() {
   var dims, pixels, labels;
   var gray;
   var mapping, boxes, wordIdx;
+  var isGoing;
 
   /******************
   * work functions */
@@ -40,12 +41,14 @@ var Reedr = (function() {
     dims = [0, 0], pixels = [], labels = [];
     gray = [];
     mapping = [], boxes = [], wordIdx = 0;
+    isGoing = false;
 
     //do work whenever the selected picture changes
     $s('#image-sel').addEventListener('change', function(e) {
       dims = [0, 0], pixels = [], labels = [];
       gray = [];
       mapping = [], boxes = [], wordIdx = 0;
+      isGoing = false;
 
       updatePixelData(e, function() {
         var bw = colToBW(pixels, dims[0]); //first, remove the color
@@ -58,43 +61,43 @@ var Reedr = (function() {
         displayImageBW(bw);
 
         //sort the boxes
-        var avgBoxHt = boxes.reduce(function(a, b) {
-          return a + b[3];
-        }, 0)/boxes.length;
-        var numRows = dims[1]/avgBoxHt;
-
-        //pass one of the sort
-        boxes.sort(function(a, b) {
-          var center1 = [a[0]+a[2]/2, a[1]+a[3]/2];
-          var center2 = [b[0]+b[2]/2, b[1]+b[3]/2];
-          var score1 = center1[1]*numRows + center1[0];
-          var score2 = center2[1]*numRows + center2[0];
-          return score1 - score2;
-        });
+        boxes = sortBoxes(boxes);
 
         //get a nice gray representation of the image
         gray = colToGray(pixels, dims[0], true, 1.6);
 
         //prep the canvas
-        canvas.width = DISP_WID/2;
-        canvas.height = WORD_DISP_HT/2;
-        canvas.style.width = DISP_WID+'px';
-        canvas.style.height = WORD_DISP_HT+'px';
+        canvas.width = DISP_WID;
+        canvas.height = WORD_DISP_HT;
+        canvas.style.width = 4*DISP_WID+'px';
+        canvas.style.height = 4*WORD_DISP_HT+'px';
 
-        displayUntilEnd();
-
-        document.getElementById('canvas').focus();
+        //display the first word
+        displayWord(0);
       });
+    });
+
+    //event handlers
+    $s('#btn2').addEventListener('click', function() {
+      if (isGoing) {
+        isGoing = false;
+        $s('#btn2').innerHTML = 'Start';
+      } else {
+        isGoing = true;
+        var delay = 60000/parseInt($s('#wpm').value);
+        $s('#btn2').innerHTML = 'Pause';
+        displayUntilEnd(delay);
+      }
     });
   }
 
-  function displayUntilEnd() {
-    if (wordIdx < boxes.length) {
+  function displayUntilEnd(delay) {
+    if (wordIdx < boxes.length && isGoing) {
       displayWord(wordIdx);
       wordIdx++;
       setTimeout(function() {
-        displayUntilEnd();
-      }, 100);
+        displayUntilEnd(delay);
+      }, delay);
     }
   }
 
@@ -117,7 +120,7 @@ var Reedr = (function() {
       //get the file
       var windowURL = window.URL || window.webkitURL;
       var picURL = windowURL.createObjectURL(fileInput[0]);
-      getPixelsFromImage(picURL, 2*DISP_WID, function(data, width, time) {
+      getPixelsFromImage(picURL, 4*DISP_WID, function(data, width, time) {
         //report out
         console.log('Finished loading pixels in '+time+'ms.');
 
@@ -478,6 +481,80 @@ var Reedr = (function() {
       return box[2] > 4 && box[2] > 4;
     });
   }
+
+function sortBoxes(bxs) {
+
+  var sortedBoxes = [];
+
+  while (bxs.length > 0) {
+      var newLine = false;
+      var next;
+      if (sortedBoxes.length > 0) {
+          var last = sortedBoxes[sortedBoxes.length-1];
+          var line = [];
+
+          bxs.forEach(function (box, index) {
+              if (sameLine(last, box)) {
+                  line.push(box.concat([index]));
+              }
+          });
+
+          line = line.filter(function (box){
+              var distance = (box[0] + box[2]/2) - (last[0] + last[2]/2);
+              var maxDistance = box[2] + last[2];
+              return ((distance > 0) && (distance < maxDistance));
+          }).sort(compareX);
+
+          if (line.length > 0) {
+              next = line[0];
+          } else {
+              newLine = true;
+          }
+      } else {
+          newLine = true;
+      }
+      if (newLine) {
+          var slope = 3;
+          next = bxs.reduce(function(a, b, idx) {
+            if (a[0]+a[1]*slope < b[0]+b[1]*slope) {
+              return a;
+            } else return b.concat([idx]);
+          }, [Infinity, Infinity, Infinity, Infinity, -1]);
+      }
+      sortedBoxes.push(bxs.splice(next[5], 1)[0]);
+  }
+  return sortedBoxes;
+}
+
+function compareLine(b1, b2) {
+    if (sameLine(b1, b2)) {
+        return compareX(b1, b2);
+    } else {
+        return compareY(b1, b2);
+    }
+}
+
+function sameLine (b1, b2) {
+    // var s1 = .8;
+    // var s2 = 1 - s1;
+    // return (((b1[1] + b1[3]/2 > b2[1]) && (b1[1] + b1[3]/2 < b2[1] + b2[3])) ||
+    //   ((b2[1] + b2[3]/2 > b1[1]) && (b2[1] + b2[3]/2 < b1[1] + b1[3])));
+
+    var mid1 = b1[1] + b1[3]/2;
+    var mid2 = b2[1] + b2[3]/2;
+
+    var secondInFirst = (mid2 > b1[1]) && (mid2 < b1[1] + b1[3]);
+    var firstInSecond = (mid1 > b2[1]) && (mid1 < b2[1] + b2[3]);
+    return secondInFirst || firstInSecond;
+}
+
+function compareX (b1, b2) {
+  return (b1[0] + b1[2]/2) - (b2[0] + b2[2]/2);
+}
+
+function compareY (b1, b2) {
+  return (b1[1] + b1[3]/2) - (b2[1] + b2[3]/2);
+}
 
   function $s(id) { //for convenience
     if (id.charAt(0) !== '#') return false;
