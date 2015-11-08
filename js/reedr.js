@@ -85,6 +85,7 @@ var Reedr = (function() {
             );
           }
         });
+        document.getElementById('canvas').focus()
       });
     });
   }
