@@ -308,7 +308,6 @@ var Reedr = (function() {
       canvas.width = img.width; //with this width
       canvas.height = img.height; //and this height (the same as the img)
       canvas.style.display = 'none'; //hide it from the user
-      document.body.appendChild(canvas); //then add it to the document's body
       var ctx = canvas.getContext('2d'); //now get the context
       ctx.drawImage(img, 0, 0, img.width, img.height); //so that you can draw it
       var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
@@ -318,7 +317,6 @@ var Reedr = (function() {
       var data2 = ctx.getImageData(0, 0, W2, H2).data;
       var ratio = canvas.width/W2;
       var ratioHalf = Math.ceil(ratio);
-      document.body.removeChild(canvas); //all done, so get rid of it
 
       //hermite, thanks to ViliusL from
       //  https://github.com/viliusle/Hermite-resize/blob/master/hermite.js
