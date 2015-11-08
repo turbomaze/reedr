@@ -22,6 +22,8 @@ var Reedr = (function() {
    * working variables */
   var canvas, ctx;
   var dims, pixels, labels;
+  var gray;
+  var mapping, boxes, wordIdx;
 
   /******************
   * work functions */
@@ -34,15 +36,21 @@ var Reedr = (function() {
 
     //misc variable init
     dims = [0, 0], pixels = [], labels = [];
+    gray = [];
+    mapping = [], boxes = [], wordIdx = 0;
 
     //do work whenever the selected picture changes
     $s('#image-sel').addEventListener('change', function(e) {
+      dims = [0, 0], pixels = [], labels = [];
+      gray = [];
+      mapping = [], boxes = [], wordIdx = 0;
+
       updatePixelData(e, function() {
         var bw = colToBW(pixels, dims[0]); //first, remove the color
         var blurred = getSmoothing(getSmoothing(bw)); //then, blur it
         labels = labelWords(blurred);
-        var mapping = getMappingFromLabels(labels, dims[0]);
-        var boxes = getBoxes(mapping);
+        mapping = getMappingFromLabels(labels, dims[0]);
+        boxes = getBoxes(mapping);
 
         //render the bounding boxes of all the words
         displayImageBW(bw);
@@ -62,30 +70,40 @@ var Reedr = (function() {
           return score1 - score2;
         });
 
-        //controls to box words
-        var wordIdx = 0;
-        var gray = colToGray(pixels, dims[0], true, 1.6);
-        window.addEventListener('keydown', function(e) {
-          if (e.keyCode === 32) { //space
-            canvas.width = DISP_WID;
-            canvas.height = WORD_DISP_HT;
-            canvas.style.width = DISP_WID+'px';
-            canvas.style.height = WORD_DISP_HT+'px';
+        //get a nice gray representation of the image
+        gray = colToGray(pixels, dims[0], true, 1.6);
 
-            wordIdx += 1;
+        //prep the canvas
+        canvas.width = DISP_WID/2;
+        canvas.height = WORD_DISP_HT/2;
+        canvas.style.width = DISP_WID+'px';
+        canvas.style.height = WORD_DISP_HT+'px';
 
-            drawWordPxArray(
-              getWordPicInBox(
-                gray[1],
-                gray[0],
-                mapping, boxes[wordIdx]
-              ), boxes[wordIdx][2]
-            );
-          }
-        });
-        document.getElementById('canvas').focus()
+        displayUntilEnd();
+
+        document.getElementById('canvas').focus();
       });
     });
+  }
+
+  function displayUntilEnd() {
+    if (wordIdx < boxes.length) {
+      displayWord(wordIdx);
+      wordIdx++;
+      setTimeout(function() {
+        displayUntilEnd();
+      }, 100);
+    }
+  }
+
+  //displays the word at the given index
+  function displayWord(idx) {
+    drawWordPxArray(
+      getWordPicInBox(
+        gray[1], gray[0],
+        mapping, boxes[idx]
+      ), boxes[idx][2]
+    );
   }
 
   //updates the pixels array with the selected image's data. From:
