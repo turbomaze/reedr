@@ -178,8 +178,8 @@ var Reedr = (function() {
       if (bw[i] === 0) {
         var row = fr(i / dw);
         var col = i % dw;
-        for (var j = Math.max(row-4, 0); j <= Math.min(row+4, dh-1); j++) {
-          for (var k = Math.max(col-4,0); k <= Math.min(col+4,dw-1); k++) {
+        for (var j = mx(row-4, 0); j <= mn(row+4, dh-1); j++) {
+          for (var k = mx(col-4,0); k <= mn(col+4,dw-1); k++) {
             gauss[j * dw + k] += 4 * dists[j + 4 - row][k + 4 - col];
           }
         }
@@ -203,44 +203,38 @@ var Reedr = (function() {
       labels.p(0);
     }
     var val = 1;
-    var counter = 0;
     for (var i = 0; i < blurred.length; i++) {
       if (labels[i] !== 0 || blurred[i] === 1) {
         continue;
       } else {
         var q = [i];
+        function foo(el) {
+          if (blurred[el] < threshold && labels[el] === 0) {
+            labels[el] = val;
+            q.p(el);
+          }
+        }
         var ind = 0;
         while (ind < q.length) {
           var cur = q[ind];
           var row = fr(cur / dw)
           var col = cur % dw;
+
           if (row + 1 < dh) {
             var el = (row + 1) * dw + col;
-            if (blurred[el] < threshold && labels[el] === 0) {
-              labels[el] = val;
-              q.p(el);
-            }
+            foo(el);
           }
           if (row - 1 >= 0) {
             var el = (row - 1) * dw + col;
-            if (blurred[el] < threshold && labels[el] === 0) {
-              labels[el] = val;
-              q.p(el);
-            }
+            foo(el);
           }
           if (col - 1 >= 0) {
             var el = row * dw + col - 1;
-            if (blurred[el] < threshold && labels[el] === 0) {
-              labels[el] = val;
-              q.p(el);
-            }
+            foo(el);
           }
           if (col + 1 < dw) {
             var el = row * dw + col + 1;
-            if (blurred[el] < threshold && labels[el] === 0) {
-              labels[el] = val;
-              q.p(el);
-            }
+            foo(el);
           }
           ind++;
         }
@@ -330,7 +324,7 @@ var Reedr = (function() {
       for (var x = 0; x < width; x++) { //and for each intended column
         var idx = 4*(dw*y + x); //idx of this pixel in the pixels array
         var val = 0.21*data[idx]+0.72*data[idx+1]+0.07*data[idx+2];
-        gray.p(Math.min(255, fr(contrast*val)));
+        gray.p(mn(255, fr(contrast*val)));
         avgGray += val;
       }
     }
