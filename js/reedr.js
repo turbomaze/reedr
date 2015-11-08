@@ -42,25 +42,47 @@ var Reedr = (function() {
         labels = labelWords(blurred);
         var mapping = getMappingFromLabels(labels, dims[0]);
         var boxes = getBoxes(mapping);
+
+        //render the bounding boxes of all the words
         displayImageBW(bw);
-        boxes.forEach(function(box) {
-          ctx.strokeStyle = 'red';
-          ctx.strokeRect.apply(ctx, box);
+
+        //sort the boxes
+        var avgBoxHt = boxes.reduce(function(a, b) {
+          return a + b[3];
+        }, 0)/boxes.length;
+        var numRows = dims[1]/avgBoxHt;
+
+        //pass one of the sort
+        boxes.sort(function(a, b) {
+          var center1 = [a[0]+a[2]/2, a[1]+a[3]/2];
+          var center2 = [b[0]+b[2]/2, b[1]+b[3]/2];
+          var score1 = center1[1]*numRows + center1[0];
+          var score2 = center2[1]*numRows + center2[0];
+          return score1 - score2;
         });
-        console.log(getBoxes(mapping));
+
+        //get the first word
+        var first = boxes.reduce(function(a, b, idx) {
+          if (a[0]+a[1] < b[0]+b[1]) {
+            return a;
+          } else return b.concat([idx]);
+        }, [Infinity, Infinity, Infinity, Infinity, -1]);
+        ctx.strokeStyle = 'red';
+        ctx.strokeRect.apply(ctx, first);
+
+        //controls to box words
+        var wordIdx = 0;
+        window.addEventListener('keydown', function(e) {
+          if (e.keyCode === 32) { //space
+            wordIdx += 1;
+
+            drawPxArray(
+              getWordPicInBox(mapping, boxes[wordIdx]),
+              boxes[wordIdx][2]
+            );
+          }
+        });
       });
-    });
-
-    var wordIdx = 0;
-    window.addEventListener('keydown', function(e) {
-      if (e.keyCode === 32) {
-        //space
-        wordIdx += 1;
-
-        displayImageBW(labels.map(function(val) {
-          return val < wordIdx ? 0 : 1;
-        }));
-      }
     });
   }
 
@@ -146,8 +168,8 @@ var Reedr = (function() {
       if (bw[i] === 0) {
         var row = Math.floor(i / dims[0]);
         var col = i % dims[0];
-        for (var j = Math.max(row - 4, 0); j <= Math.min(row + 4, dims[1] - 1); j++) {
-          for (var k = Math.max(col - 4, 0); k <= Math.min(col + 4, dims[0] - 1); k++) {
+        for (var j = Math.max(row-4, 0); j <= Math.min(row+4, dims[1]-1); j++) {
+          for (var k = Math.max(col-4,0); k <= Math.min(col+4,dims[0]-1); k++) {
             gauss[j * dims[0] + k] += 4 * dists[j + 4 - row][k + 4 - col];
           }
         }
@@ -221,27 +243,72 @@ var Reedr = (function() {
 
   /********************
    * helper functions */
+  //given a mapping and a box descriptor, return an image of the word
+  function getWordPicInBox(mapping, box) {
+    var pxs = [];
+    var wordPxs = mapping[box[4]];
+    for (var y = box[1]; y < box[1]+box[3]; y++) {
+      for (var x = box[0]; x < box[0]+box[2]; x++) {
+        if (wordPxs.hasOwnProperty(x+','+y)) {
+          var idx = 4*(y*dims[0] + x);
+          pxs.push(pixels[idx]);
+          pxs.push(pixels[idx+1]);
+          pxs.push(pixels[idx+2]);
+          pxs.push(pixels[idx+3]);
+        } else {
+          pxs.push(255), pxs.push(255), pxs.push(255), pxs.push(255);
+        }
+      }
+    }
+
+    return pxs;
+  }
+
+  //given an array of color info, render that to the canvas
+  function drawPxArray(arr, width) {
+    canvas.width = width;
+    canvas.height = arr.length/(4*width);
+    canvas.style.width = 3*canvas.width +'px';
+    canvas.style.height = 3*canvas.height + 'px';
+
+    //display the bw image
+    var currImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (var y = 0; y < canvas.height; y++) { //for all intended rows
+      for (var x = 0; x < canvas.width; x++) { //and for each intended column
+        var idx = 4*(canvas.width*y + x); //idx of this px in the pixels arr
+        for (var c = 0; c < 4; c++) { //and for all three colors, lol c++
+          currImageData.data[idx+c] = arr[idx+c];
+        }
+      }
+    }
+    ctx.putImageData(currImageData, 0, 0);
+  }
+
   //this function maps word indices to all their constituent pixel locations
   function getMappingFromLabels(labels, width) {
     var mapping = {};
     labels.forEach(function(label, idx) {
+      if (label === 0) return; //ignore zero
+
       var x = idx % width;
       var y = Math.floor(idx/width);
-      if (mapping.hasOwnProperty(label) && label !== 0) {
-        mapping[label].push([x, y]);
-      } else if (label !== 0) {
-        mapping[label] = [x, y];
-      }
+      var key = x+','+y;
+      if (!mapping.hasOwnProperty(label)) mapping[label] = {};
+      mapping[label][key] = true;
     });
 
+    //prune tiny blobs
     var minNumPxs = 25;
     var ret = [];
-    for (var wordIdx in mapping) {
-      if (mapping[wordIdx].length >= minNumPxs) {
-        ret.push(mapping[wordIdx]);
+    for (var wi in mapping) {
+      if (
+        mapping.hasOwnProperty(wi) &&
+        Object.keys(mapping[wi]).length >= minNumPxs
+      ) {
+        ret.push(mapping[wi]);
       }
     }
-    return ret;
+    return ret; //array of objects, px locations as keys
   }
 
   //converts an array of values to black and white, depending on a threshold
@@ -355,30 +422,34 @@ var Reedr = (function() {
 
   // given a mapping (list of list of coordinate pairs),
   // return a list with coordinates of top left of bounding box and
-  // dimensions: [x, y, width, height]
+  // dimensions: [x, y, width, height, idxInMapping]
   function getBoxes(mapping) {
-    console.log(mapping)
-    return mapping.map(function (pxList) {
+    return mapping.map(function (pxList, idx) {
         var minx = Infinity, miny = Infinity;
         var maxx = -Infinity, maxy = -Infinity;
-        pxList.forEach(function (pixel) {
-            if (pixel[0] < minx) {
-                minx = pixel[0];
-            }
+        Object.keys(pxList).forEach(function (key) {
+          var pixel = key.split(',').map(function(comp) {
+            return parseInt(comp);
+          });
+          if (pixel[0] < minx) {
+            minx = pixel[0];
+          }
 
-            if (pixel[0] > maxx) {
-                maxx = pixel[0];
-            }
+          if (pixel[0] > maxx) {
+            maxx = pixel[0];
+          }
 
-            if (pixel[1] < miny) {
-                miny = pixel[1];
-            }
+          if (pixel[1] < miny) {
+            miny = pixel[1];
+          }
 
-            if (pixel[1] > maxy) {
-                maxy = pixel[1];
-            }
+          if (pixel[1] > maxy) {
+            maxy = pixel[1];
+          }
         });
-        return [minx, miny, (maxx-minx), (maxy-miny)];
+        return [minx, miny, (maxx-minx), (maxy-miny), idx];
+    }).filter(function(box) {
+      return box[2] > 4 && box[2] > 4;
     });
   }
 
