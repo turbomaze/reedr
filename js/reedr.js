@@ -17,14 +17,14 @@ var Reedr = (function() {
 
   /*************
    * constants */
+  var fr = Math.floor;
 
   /*********************
    * working variables */
   var canvas, ctx;
-  var dims, pixels, labels;
+  var dims, pixels;
   var gray;
   var mapping, boxes, wordIdx;
-  var isGoing;
 
   /******************
   * work functions */
@@ -36,27 +36,21 @@ var Reedr = (function() {
     ctx = canvas.getContext('2d');
 
     //misc variable init
-    dims = [0, 0], pixels = [], labels = [];
+    dims = [0, 0], pixels = [];
     gray = [];
     mapping = [], boxes = [], wordIdx = 0;
-    isGoing = false;
 
     //do work whenever the selected picture changes
     $s('#d').addEventListener('change', function(e) {
-      dims = [0, 0], pixels = [], labels = [];
+      dims = [0, 0], pixels = [];
       gray = [];
       mapping = [], boxes = [], wordIdx = 0;
-      isGoing = false;
 
       updatePixelData(e, function() {
-        var bw = colToBW(pixels, dims[0]); //first, remove the color
-        var blurred = getSmoothing(getSmoothing(bw)); //then, blur it
-        labels = labelWords(blurred);
-        mapping = getMappingFromLabels(labels, dims[0]);
+        mapping = getMappingFromLabels(labelWords(getSmoothing(getSmoothing(colToBW(
+          pixels, dims[0]
+        )))), dims[0]);
         boxes = getBoxes(mapping);
-
-        //render the bounding boxes of all the words
-        displayImageBW(bw);
 
         //sort the boxes
         boxes = sortBoxes(boxes);
@@ -72,29 +66,18 @@ var Reedr = (function() {
 
         //display the first word
         displayWord(0);
-      });
-    });
 
-    //event handlers
-    $s('#b').addEventListener('click', function() {
-      isGoing = !isGoing;
-      if (!isGoing) {
-        $s('#b').innerHTML = 'Start';
-      } else {
-        var delay = 60000/parseInt($s('#w').value);
-        $s('#b').innerHTML = 'Pause';
-        displayUntilEnd(delay);
-      }
+        //automatically loop through them
+        displayUntilEnd(60000/400);
+      });
     });
   }
 
   function displayUntilEnd(delay) {
-    if (wordIdx < boxes.length && isGoing) {
+    if (wordIdx < boxes.length) {
       displayWord(wordIdx);
       wordIdx++;
-      setTimeout(function() {
-        displayUntilEnd(delay);
-      }, delay);
+      setTimeout(displayUntilEnd, delay, delay);
     }
   }
 
@@ -159,7 +142,7 @@ var Reedr = (function() {
       for (var x = 0; x < dims[0]; x++) { //and for each intended column
         var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
         for (var c = 0; c < 3; c++) { //and for all three colors, lol c++
-          currImageData.data[idx+c] = Math.floor(255*bw[idx/4]);
+          currImageData.data[idx+c] = fr(255*bw[idx/4]);
         }
         currImageData.data[idx+3] = 255;
       }
@@ -184,7 +167,7 @@ var Reedr = (function() {
 
     for (var i = 0; i < bw.length; i++) {
       if (bw[i] === 0) {
-        var row = Math.floor(i / dims[0]);
+        var row = fr(i / dims[0]);
         var col = i % dims[0];
         for (var j = Math.max(row-4, 0); j <= Math.min(row+4, dims[1]-1); j++) {
           for (var k = Math.max(col-4,0); k <= Math.min(col+4,dims[0]-1); k++) {
@@ -220,7 +203,7 @@ var Reedr = (function() {
         var ind = 0;
         while (ind < q.length) {
           var cur = q[ind];
-          var row = Math.floor(cur / dims[0])
+          var row = fr(cur / dims[0])
           var col = cur % dims[0];
           if (row + 1 < dims[1]) {
             var el = (row + 1) * dims[0] + col;
@@ -269,7 +252,7 @@ var Reedr = (function() {
       for (var x = box[0]; x < box[0]+box[2]; x++) {
         if (wordPxs.hasOwnProperty(x+','+y)) {
           var idx = y*dims[0] + x;
-          var fl = Math.floor(gray[idx]);
+          var fl = fr(gray[idx]);
           pxs = pxs.concat(fl, fl, fl, 255);
         } else {
           pxs = pxs.concat([255, 255, 255, 255]);
@@ -301,7 +284,7 @@ var Reedr = (function() {
       if (label === 0) return; //ignore zero
 
       var x = idx % width;
-      var y = Math.floor(idx/width);
+      var y = fr(idx/width);
       var key = x+','+y;
       if (!mapping.hasOwnProperty(label)) mapping[label] = {};
       mapping[label][key] = true;
@@ -338,7 +321,7 @@ var Reedr = (function() {
       for (var x = 0; x < width; x++) { //and for each intended column
         var idx = 4*(dims[0]*y + x); //idx of this pixel in the pixels array
         var val = 0.21*data[idx]+0.72*data[idx+1]+0.07*data[idx+2];
-        gray.push(Math.min(255, Math.floor(contrast*val)));
+        gray.push(Math.min(255, fr(contrast*val)));
         avgGray += val;
       }
     }
@@ -388,11 +371,11 @@ var Reedr = (function() {
           var weights_alpha = 0;
           var gx_r = 0, gx_g = 0, gx_b = 0, gx_a = 0;
           var center_y = (j + 0.5) * ratio;
-          for (var yy = Math.floor(j*ratio); yy < (j+1)*ratio; yy++) {
+          for (var yy = fr(j*ratio); yy < (j+1)*ratio; yy++) {
             var dy = Math.abs(center_y - (yy + 0.5)) / ratioHalf;
             var center_x = (i + 0.5) * ratio;
             var w0 = dy*dy //pre-calc part of w
-            for (var xx = Math.floor(i*ratio); xx < (i+1)*ratio; xx++) {
+            for (var xx = fr(i*ratio); xx < (i+1)*ratio; xx++) {
               var dx = Math.abs(center_x - (xx + 0.5)) / ratioHalf;
               var w = Math.sqrt(w0 + dx*dx);
               if (w >= -1 && w <= 1) {
@@ -490,7 +473,9 @@ function sortBoxes(bxs) {
               var distance = (box[0] + box[2]/2) - (last[0] + last[2]/2);
               var maxDistance = box[2] + last[2];
               return ((distance > 0) && (distance < maxDistance));
-          }).sort(compareX);
+          }).sort(function (b1, b2) {
+            return (b1[0] + b1[2]/2) - (b2[0] + b2[2]/2);
+          });
 
           if (line.length > 0) {
               next = line[0];
@@ -513,35 +498,17 @@ function sortBoxes(bxs) {
   return sortedBoxes;
 }
 
-function compareLine(b1, b2) {
-    if (sameLine(b1, b2)) {
-        return compareX(b1, b2);
-    } else {
-        return compareY(b1, b2);
-    }
-}
+  function sameLine (b1, b2) {
+      var mid1 = b1[1] + b1[3]/2;
+      var mid2 = b2[1] + b2[3]/2;
+      var secondInFirst = (mid2 > b1[1]) && (mid2 < b1[1] + b1[3]);
+      var firstInSecond = (mid1 > b2[1]) && (mid1 < b2[1] + b2[3]);
+      return secondInFirst || firstInSecond;
+  }
 
-function sameLine (b1, b2) {
-    // var s1 = .8;
-    // var s2 = 1 - s1;
-    // return (((b1[1] + b1[3]/2 > b2[1]) && (b1[1] + b1[3]/2 < b2[1] + b2[3])) ||
-    //   ((b2[1] + b2[3]/2 > b1[1]) && (b2[1] + b2[3]/2 < b1[1] + b1[3])));
-
-    var mid1 = b1[1] + b1[3]/2;
-    var mid2 = b2[1] + b2[3]/2;
-
-    var secondInFirst = (mid2 > b1[1]) && (mid2 < b1[1] + b1[3]);
-    var firstInSecond = (mid1 > b2[1]) && (mid1 < b2[1] + b2[3]);
-    return secondInFirst || firstInSecond;
-}
-
-function compareX (b1, b2) {
-  return (b1[0] + b1[2]/2) - (b2[0] + b2[2]/2);
-}
-
-function compareY (b1, b2) {
-  return (b1[1] + b1[3]/2) - (b2[1] + b2[3]/2);
-}
+  function compareX (b1, b2) {
+    return (b1[0] + b1[2]/2) - (b2[0] + b2[2]/2);
+  }
 
   function $s(id) { //for convenience
     if (id.charAt(0) !== '#') return false;
