@@ -303,6 +303,36 @@ var Reedr = (function() {
     return (1/(2*Math.PI*sigma*sigma))*Math.exp(-(x*x+y*y)/(2*sigma*sigma));
   }
 
+  // given a mapping (list of list of coordinate pairs),
+  // return a list with coordinates of top left of bounding box and
+  // dimensions: [x, y, width, height]
+  function getBoxes(mapping) {
+    return mapping.map(function (word) {
+        var minx = Infinity;
+        var miny = Infinity;
+        var maxx = -Infinity;
+        var maxy = -Infinity;
+        word.forEach(function (pixel) {
+            if (pixel[0] < minx) {
+                minx = pixel[0];
+            }
+
+            if (pixel[0] > maxx) {
+                maxx = pixel[0];
+            }
+
+            if (pixel[1] < miny) {
+                miny = pixel[1];
+            }
+
+            if (pixel[1] > maxy) {
+                maxy = pixel[1];
+            }
+        });
+        return [minx, miny, (maxx-minx), (maxy-miny)];
+    });
+  }
+
   function $s(id) { //for convenience
     if (id.charAt(0) !== '#') return false;
     return document.getElementById(id.substring(1));
