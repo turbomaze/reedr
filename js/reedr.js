@@ -4,7 +4,7 @@
 | @author Anthony  |
 | @author Liang    |
 | @author Vahid    |
-| @version 0.3     |
+| @version 1.0     |
 | @date 2015/11/07 |
 | @edit 2015/11/08 |
 \******************/
