@@ -20,7 +20,7 @@ var Reedr = (function() {
   /*********************
    * working variables */
   var canvas, ctx;
-  var dims, pixels;
+  var dims, pixels, labels;
 
   /******************
   * work functions */
@@ -32,22 +32,35 @@ var Reedr = (function() {
     ctx = canvas.getContext('2d');
 
     //misc variable init
-    dims = [0, 0], pixels = [];
+    dims = [0, 0], pixels = [], labels = [];
 
     //do work whenever the selected picture changes
     $s('#image-sel').addEventListener('change', function(e) {
       updatePixelData(e, function() {
         var bw = colToBW(pixels, dims[0]); //first, remove the color
         var blurred = getSmoothing(getSmoothing(bw)); //then, blur it
-        var labeled = labelWords(blurred);
-        bw = grayToBW(blurred, dims[0], 0.5); //finally, go back to bw
-        displayImageBW(labeled); //display it
+        labels = labelWords(blurred);
+        var mapping = getMappingFromLabels(labels);
+        console.log(mapping);
+        //displayImageBW(labels); //display it
       });
+    });
+
+    var wordIdx = 0;
+    window.addEventListener('keydown', function(e) {
+      if (e.keyCode === 32) {
+        //space
+        wordIdx += 1;
+
+        displayImageBW(labels.map(function(val) {
+          return val < wordIdx ? 0 : 1;
+        }));
+      }
     });
   }
 
   //updates the pixels array with the selected image's data. From:
-  //www.syntaxxx.com/accessing-user-device-photos-with-the-html5-camera-api/
+  //  www.syntaxxx.com/accessing-user-device-photos-with-the-html5-camera-api/
   function updatePixelData(e, callback) {
     //bring selected photo in
     var fileInput = e.target.files;
@@ -106,10 +119,9 @@ var Reedr = (function() {
       }
     }
     ctx.putImageData(currImageData, 0, 0);
-
-    return bw;
   }
 
+  //blurs a black/white image using a gaussian kernal
   function getSmoothing(bw) {
     var gauss = [];
     for (var i = 0; i < bw.length; i++) {
@@ -120,7 +132,7 @@ var Reedr = (function() {
     for (var j = -4; j <= 4; j++) {
       dists.push([]);
       for (var k = -4; k <= 4; k++) {
-        dists[j + 4].push(gaussDist(j, k, 1.5))
+        dists[j + 4].push(gaussDist(j, k, 1, 1.6));
       }
     }
 
@@ -136,7 +148,7 @@ var Reedr = (function() {
       }
     }
     for (var i = 0; i < gauss.length; i++) {
-      if (gauss[i] > 0.4) {
+      if (gauss[i] > 0.65) {
         gauss[i] = 0;
       } else {
         gauss[i] = 1;
@@ -145,6 +157,7 @@ var Reedr = (function() {
     return gauss;
   }
 
+  //finds and labels all contiguous regions (same foreground color)
   function labelWords(blurred) {
     var threshold = 0.5;
     var labels = [];
@@ -196,17 +209,43 @@ var Reedr = (function() {
         val++;
       }
     }
-    return labels
+
+    return labels;
   }
 
   /********************
    * helper functions */
+  //this function maps word indices to all their constituent pixel locations
+  function getMappingFromLabels(labels, width) {
+    var mapping = {};
+    labels.forEach(function(label, idx) {
+      var x = idx % width;
+      var y = Math.floor(idx/width);
+      if (mapping.hasOwnProperty(label) && label !== 0) {
+        mapping[label].push([x, y]);
+      } else if (label !== 0) {
+        mapping[label] = [x, y];
+      }
+    });
+
+    var minNumPxs = 25;
+    var ret = [];
+    for (var wordIdx in mapping) {
+      if (mapping[wordIdx].length >= minNumPxs) {
+        ret.push(mapping[wordIdx]);
+      }
+    }
+    return ret;
+  }
+
+  //converts an array of values to black and white, depending on a threshold
   function grayToBW(data, width, thresh) {
     return data.map(function(intensity) {
       return intensity > thresh ? 1 : 0;
     });
   }
 
+  //converts an RGBA image array into a binary array (black and white)
   function colToBW(data, width, thresh) {
     thresh = thresh || 0.75;
 
@@ -298,9 +337,14 @@ var Reedr = (function() {
     img.src = location; //load the image
   }
 
-  function gaussDist(x, y, sigma) {
-    sigma = sigma || 0.84089642;
-    return (1/(2*Math.PI*sigma*sigma))*Math.exp(-(x*x+y*y)/(2*sigma*sigma));
+  //two dimensional gaussian distribution function with variance parameters
+  function gaussDist(x, y, sigma1, sigma2) {
+    sigma1 = sigma1 || 0.84089642;
+    sigma2 = sigma2 || sigma1;
+    return (1/(2*Math.PI*sigma1*sigma2))*Math.exp(
+      -(x*x)/(2*sigma1*sigma1) +
+      -(y*y)/(2*sigma2*sigma2)
+    );
   }
 
   function $s(id) { //for convenience
